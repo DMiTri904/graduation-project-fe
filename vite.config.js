@@ -11,7 +11,11 @@ export default defineConfig({
   // base: './'
   resolve: {
     alias: [
-      { find: '~', replacement: '/src' }
+      { find: '~', replacement: '/src' },
+      { find: '@', replacement: '/src' }
     ]
+  },
+  optimizeDeps: {
+    include: ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled']
   }
 })
