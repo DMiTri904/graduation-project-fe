@@ -1,39 +1,44 @@
-import Typography from '@mui/material/Typography'
-import Box from '@mui/material/Box'
-import Menu from '@mui/material/Menu'
-import MenuItem from '@mui/material/MenuItem'
-import Divider from '@mui/material/Divider'
-import ListItemText from '@mui/material/ListItemText'
-import ListItemIcon from '@mui/material/ListItemIcon'
-import ContentCut from '@mui/icons-material/ContentCut'
-import ContentCopy from '@mui/icons-material/ContentCopy'
-import ContentPaste from '@mui/icons-material/ContentPaste'
-import Cloud from '@mui/icons-material/Cloud'
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import Tooltip from '@mui/material/Tooltip'
-import DeleteForeverIcon from '@mui/icons-material/DeleteForever'
-import AddCardIcon from '@mui/icons-material/AddCard'
-import { Button } from '@mui/material'
-import DragHandleIcon from '@mui/icons-material/DragHandle'
-import { useState } from 'react'
+import {
+  Plus,
+  MoreHorizontal,
+  Scissors,
+  Copy,
+  Clipboard,
+  Trash2,
+  Archive,
+  GripVertical
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu'
 import ListCards from './ListCards'
 import { mapOrder } from '~/utils/sorts'
-
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Column as ColumnType } from '../types/board'
-
+import type { Column as ColumnType } from '../types/board'
 
 interface ColumnProps {
   column: ColumnType
 }
 
 function Column({ column }: ColumnProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({
     id: column._id,
     data: { ...column }
   })
-  
+
   const dndKitColumnStyles = {
     transform: CSS.Translate.toString(transform),
     transition,
@@ -41,107 +46,66 @@ function Column({ column }: ColumnProps) {
     opacity: isDragging ? 0.5 : undefined
   }
 
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
-  const open = Boolean(anchorEl)
-  
-  const handleClick = (event: React.MouseEvent<SVGSVGElement, MouseEvent>) => setAnchorEl(event.currentTarget as unknown as HTMLElement)
-  const handleClose = () => setAnchorEl(null)
-  
   const orderedCards = mapOrder(column?.cards, column?.cardOrderIds, '_id')
 
   return (
     <div ref={setNodeRef} style={dndKitColumnStyles} {...attributes}>
-      <Box
+      <div
         {...listeners}
-        sx={{
-          minWidth: '300px',
-          maxWidth: '300px',
-          bgcolor: (theme) => (theme.palette.mode === 'dark' ? '#333643' : '#ebecf0'),
-          ml: 2,
-          borderRadius: '6px',
-          height: 'fit-content',
-          maxHeight: (theme) => `calc(${theme.trello.boardContentHeight} - ${theme.spacing(5)})`
-        }}
+        className='min-w-75 max-w-75 bg-slate-100 dark:bg-slate-800 ml-4 rounded-lg h-fit max-h-[calc(100vh-170px)]'
       >
-        {/* Box Column Header*/}
-        <Box sx={{
-          height: (theme) => theme.trello.columnHeaderHeight,
-          p: 2,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
-          <Typography variant="h6" sx={{
-            fontSize: '1rem',
-            fontWeight: 'bold',
-            cursor: 'pointer'
-          }}>
-            {column.title}
-          </Typography>
-          <Box>
-            <Tooltip title="More options">
-              <ExpandMoreIcon
-                sx={{ color: 'text.primary', cursor: 'pointer' }}
-                id="basic-column-dropdown"
-                aria-controls={open ? 'basic-menu-column-dropdown' : undefined}
-                aria-haspopup="true"
-                aria-expanded={open ? 'true' : undefined}
-                onClick={handleClick}
-              />
-            </Tooltip>
-            <Menu
-              id="basic-menu-column-dropdown"
-              anchorEl={anchorEl}
-              open={open}
-              onClose={handleClose}
-              MenuListProps={{
-                'aria-labelledby': 'basic-column-dropdown'
-              }}
-            >
-              <MenuItem>
-                <ListItemIcon><AddCardIcon fontSize="small" /></ListItemIcon>
-                <ListItemText>Add new card</ListItemText>
-              </MenuItem>
-              <MenuItem>
-                <ListItemIcon><ContentCut fontSize="small" /></ListItemIcon>
-                <ListItemText>Cut</ListItemText>
-              </MenuItem>
-              <MenuItem>
-                <ListItemIcon><ContentCopy fontSize="small" /></ListItemIcon>
-                <ListItemText>Copy</ListItemText>
-              </MenuItem>
-              <MenuItem>
-                <ListItemIcon><ContentPaste fontSize="small" /></ListItemIcon>
-                <ListItemText>Paste</ListItemText>
-              </MenuItem>
-              <Divider />
-              <MenuItem>
-                <ListItemIcon><DeleteForeverIcon fontSize="small" /></ListItemIcon>
-                <ListItemText>Remove this column</ListItemText>
-              </MenuItem>
-              <MenuItem>
-                <ListItemIcon><Cloud fontSize="small" /></ListItemIcon>
-                <ListItemText>Archie this column</ListItemText>
-              </MenuItem>
-            </Menu>
-          </Box>
-        </Box>
-        {/* Box List Card*/}
+        {/* Column Header */}
+        <div className='h-12.5 p-4 flex items-center justify-between'>
+          <h3 className='text-base font-bold cursor-pointer'>{column.title}</h3>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant='ghost' size='sm' className='h-8 w-8 p-0'>
+                <MoreHorizontal className='h-4 w-4' />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align='end'>
+              <DropdownMenuItem>
+                <Plus className='mr-2 h-4 w-4' />
+                Add new card
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Scissors className='mr-2 h-4 w-4' />
+                Cut
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Copy className='mr-2 h-4 w-4' />
+                Copy
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Clipboard className='mr-2 h-4 w-4' />
+                Paste
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className='text-red-600'>
+                <Trash2 className='mr-2 h-4 w-4' />
+                Remove this column
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Archive className='mr-2 h-4 w-4' />
+                Archive this column
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* List Cards */}
         <ListCards cards={orderedCards} />
-        {/* Box Column Footer*/}
-        <Box sx={{
-          height: (theme) => theme.trello.columnFooterHeight,
-          p: 2,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
-          <Button startIcon={<AddCardIcon />}>Add new card</Button>
-          <Tooltip title="Drag to move">
-            <DragHandleIcon sx={{ cursor: 'pointer' }} />
-          </Tooltip>
-        </Box>
-      </Box>
+
+        {/* Column Footer */}
+        <div className='h-12.5 p-4 flex items-center justify-between'>
+          <Button variant='ghost' size='sm' className='h-8'>
+            <Plus className='mr-2 h-4 w-4' />
+            Add new card
+          </Button>
+          <GripVertical className='h-5 w-5 cursor-pointer text-slate-500' />
+        </div>
+      </div>
     </div>
   )
 }

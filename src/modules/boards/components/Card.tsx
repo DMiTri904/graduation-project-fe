@@ -1,22 +1,15 @@
-import { Card as MuiCard } from '@mui/material'
-import CardActions from '@mui/material/CardActions'
-import CardContent from '@mui/material/CardContent'
-import CardMedia from '@mui/material/CardMedia'
-import GroupIcon from '@mui/icons-material/Group'
-import CommentIcon from '@mui/icons-material/Comment'
-import AttachmentIcon from '@mui/icons-material/Attachment'
-import Typography from '@mui/material/Typography'
-import Button from '@mui/material/Button'
+import { Users, MessageSquare, Paperclip } from 'lucide-react'
+import { Card, CardContent, CardFooter } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Card as CardType } from '../types/board'
-
+import type { Card as CardType } from '../types/board'
 
 interface CardProps {
   card: CardType
 }
 
-function Card({ card }: CardProps) {
+function TrelloCard({ card }: CardProps) {
   const {
     attributes,
     listeners,
@@ -28,14 +21,14 @@ function Card({ card }: CardProps) {
     id: card._id,
     data: { ...card }
   })
-  
+
   const dndKitCardStyles = {
     transform: CSS.Translate.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : undefined,
-    border: isDragging ? '1px solid #2ecc71' : undefined
+    border: isDragging ? '2px solid #10b981' : undefined
   }
-  
+
   const shouldShowCardActions = () => {
     return (
       !!card?.memberIds?.length ||
@@ -43,45 +36,63 @@ function Card({ card }: CardProps) {
       !!card?.attachments?.length
     )
   }
-  
+
+  // Don't render placeholder cards at all
+  if (card?.FE_PlaceholderCard) {
+    return (
+      <div
+        ref={setNodeRef}
+        style={{ display: 'none' }}
+        {...attributes}
+        {...listeners}
+      />
+    )
+  }
+
   return (
-    <MuiCard
+    <Card
       ref={setNodeRef}
       style={dndKitCardStyles}
       {...attributes}
       {...listeners}
-      sx={{
-        cursor: 'pointer',
-        boxShadow: '0 1px 1px rgba(0, 0, 0, 0.2)',
-        overflow: 'unset',
-        display: card?.FE_PlaceholderCard ? 'none' : 'block'
-      }}
+      className='cursor-pointer shadow-sm hover:shadow-md transition-shadow'
     >
-      {card?.cover && <CardMedia sx={{ height: 140 }} image={card?.cover} />}
-      <CardContent sx={{ p: 1.5, '&:last-child': { p: 1.5 } }}>
-        <Typography>{card?.title}</Typography>
+      {card?.cover && (
+        <div className='h-36 w-full overflow-hidden rounded-t-lg'>
+          <img
+            src={card.cover}
+            alt={card.title}
+            className='w-full h-full object-cover'
+          />
+        </div>
+      )}
+      <CardContent className='p-3'>
+        <p className='text-sm'>{card?.title}</p>
       </CardContent>
       {shouldShowCardActions() && (
-        <CardActions sx={{ p: '0 4px 8px 4px' }}>
+        <CardFooter className='p-2 pt-0 flex gap-2'>
           {!!card?.memberIds?.length && (
-            <Button size='small' startIcon={<GroupIcon />}>
-              {card?.memberIds?.length}
-            </Button>
+            <Badge variant='secondary' className='text-xs gap-1'>
+              <Users className='h-3 w-3' />
+              {card.memberIds.length}
+            </Badge>
           )}
           {!!card?.comments?.length && (
-            <Button size='small' startIcon={<CommentIcon />}>
-              {card?.comments?.length}
-            </Button>
+            <Badge variant='secondary' className='text-xs gap-1'>
+              <MessageSquare className='h-3 w-3' />
+              {card.comments.length}
+            </Badge>
           )}
           {!!card?.attachments?.length && (
-            <Button size='small' startIcon={<AttachmentIcon />}>
-              {card?.attachments?.length}
-            </Button>
+            <Badge variant='secondary' className='text-xs gap-1'>
+              <Paperclip className='h-3 w-3' />
+              {card.attachments.length}
+            </Badge>
           )}
-        </CardActions>
+        </CardFooter>
       )}
-    </MuiCard>
+    </Card>
   )
 }
 
-export default Card
+export default TrelloCard

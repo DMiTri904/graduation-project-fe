@@ -1,4 +1,3 @@
-import Box from '@mui/material/Box'
 import CardItem from './Card'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { Card } from '../types/board'
@@ -9,26 +8,15 @@ interface ListCardsProps {
 
 function ListCards({ cards }: ListCardsProps) {
   return (
-    <SortableContext items={cards?.map(c => c._id)} strategy={verticalListSortingStrategy}>
-      <Box sx={{
-        p: '0 5px',
-        m: '0 5px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 1,
-        overflowX: 'hidden',
-        overflowY: 'auto',
-        maxHeight: (theme) => `calc(
-          ${theme.trello.boardContentHeight} - 
-          ${theme.spacing(5)} -
-          ${theme.trello.columnHeaderHeight} -
-          ${theme.trello.columnFooterHeight}
-        )`,
-        '&::-webkit-scrollbar-thumb': { backgroundColor: '#ced0da' },
-        '&::-webkit-scrollbar-thumb:hover': { backgroundColor: '#bfc2cf' }
-      }}>
-        {cards.map(card => <CardItem key={card._id} card={card} />)}
-      </Box>
+    <SortableContext
+      items={cards?.map(c => c._id)}
+      strategy={verticalListSortingStrategy}
+    >
+      <div className='px-1.5 mx-1.5 flex flex-col gap-2 overflow-x-hidden overflow-y-auto max-h-[calc(100vh-170px-50px-50px)] scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent hover:scrollbar-thumb-slate-400'>
+        {cards.map(card => (
+          <CardItem key={card._id} card={card} />
+        ))}
+      </div>
     </SortableContext>
   )
 }

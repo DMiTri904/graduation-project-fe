@@ -1,10 +1,11 @@
-import Box from '@mui/material/Box'
+import { Plus } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import ColumnItem from './Column'
-import Button from '@mui/material/Button'
-import NoteAddIcon from '@mui/icons-material/NoteAdd'
-import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable'
+import {
+  SortableContext,
+  horizontalListSortingStrategy
+} from '@dnd-kit/sortable'
 import { Column } from '../types/board'
-
 
 interface ListColumnProps {
   columns: Column[]
@@ -12,40 +13,25 @@ interface ListColumnProps {
 
 function ListColumn({ columns }: ListColumnProps) {
   return (
-    <SortableContext items={columns?.map(c => c._id)} strategy={horizontalListSortingStrategy}>
-      <Box sx={{
-        bgcolor: 'inherit',
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        overflowX: 'auto',
-        overflowY: 'hidden',
-        '&::-webkit-scrollbar-track': { m: 2 }
-      }}>
-        {columns?.map(column => <ColumnItem key={column._id} column={column} />)}
-        {/* Box Add new column CTA */}
-        <Box sx={{
-          minWidth: '200px',
-          maxWidth: '200px',
-          mx: 2,
-          borderRadius: '6px',
-          height: 'fit-content',
-          bgcolor: '#ffffff3d'
-        }}>
+    <SortableContext
+      items={columns?.map(c => c._id)}
+      strategy={horizontalListSortingStrategy}
+    >
+      <div className='w-full h-full flex overflow-x-auto overflow-y-hidden'>
+        {columns?.map(column => (
+          <ColumnItem key={column._id} column={column} />
+        ))}
+        {/* Add new column button */}
+        <div className='min-w-50 max-w-50 mx-4 rounded-lg h-fit bg-white/25'>
           <Button
-            startIcon={<NoteAddIcon />}
-            sx={{
-              color: 'white',
-              width: '100%',
-              justifyContent: 'flex-start',
-              pl: 2.5,
-              py: 1
-            }}
+            variant='ghost'
+            className='text-white w-full justify-start pl-4 py-2 hover:bg-white/30'
           >
+            <Plus className='mr-2 h-4 w-4' />
             Add new column
           </Button>
-        </Box>
-      </Box>
+        </div>
+      </div>
     </SortableContext>
   )
 }
