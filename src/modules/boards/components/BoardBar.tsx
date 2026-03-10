@@ -1,6 +1,7 @@
 import { Filter, ArrowUpDown, MoreHorizontal, UserPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import CreateCardDialog from './CreateCardDialog'
 import type { Board } from '../types/board'
 
 interface BoardBarProps {
@@ -65,6 +66,9 @@ export default function BoardBar({ board }: BoardBarProps) {
 
       {/* KHU VỰC BÊN PHẢI */}
       <div className='flex items-center gap-2.5'>
+        {/* Create Card Button */}
+        <CreateCardDialog />
+
         <Button
           variant='outline'
           className='h-9 text-slate-600 border-slate-200 hover:bg-slate-50 font-medium shadow-sm'

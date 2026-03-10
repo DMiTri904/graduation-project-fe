@@ -1,4 +1,4 @@
-import MainLayout from '@/layouts/mainLayout'
+import MainLayout from '@/layouts/MainLayout'
 import { createBrowserRouter } from 'react-router-dom'
 import ForgotPasswordPage from '~/modules/auth/pages/forgotPasswordPage'
 import { LoginPage } from '~/modules/auth/pages/loginPage'

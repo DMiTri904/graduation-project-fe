@@ -27,6 +27,7 @@ import ColumnItem from './Column'
 import CardItem from './Card'
 import { generatePlaceholderCard } from '~/utils/formatters'
 import type { Board, Column, Card } from '../types/board'
+import { useBoardStore } from '../stores/useBoardStore'
 
 const ACTIVE_DRAG_ITEM_TYPE = {
   COLUMN: 'ACTIVE_DRAG_ITEM_TYPE_COLUMN',
@@ -40,7 +41,11 @@ interface BoardContentProps {
   board?: Board
 }
 
-function BoardContent({ board }: BoardContentProps) {
+function BoardContent({ board: boardProp }: BoardContentProps) {
+  // Use Zustand store
+  const board = useBoardStore(state => state.board) || boardProp
+  const { reorderColumns, reorderCardsInColumn } = useBoardStore()
+
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: { distance: 10 }
   })
@@ -338,8 +343,8 @@ function BoardContent({ board }: BoardContentProps) {
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      {/* h-[calc(100vh-64px-68px)] */}
-      <div className='bg-slate-50 dark:bg-slate-900 w-full h-full overflow-x-auto overflow-y-hidden p-6'>
+      {/* Board Content Container - horizontal scroll for columns */}
+      <div className='bg-slate-50 dark:bg-slate-900 w-full flex-1 overflow-x-auto overflow-y-hidden p-6'>
         <div className='flex items-start gap-6 h-full'>
           <ListColumn columns={orderedColumns} />
         </div>

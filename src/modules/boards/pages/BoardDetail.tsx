@@ -9,8 +9,11 @@ const boardData = mockData.board as BoardType
 
 function Board() {
   return (
-    <div className='h-screen w-full'>
+    <div className='h-screen w-full flex flex-col overflow-hidden'>
+      {/* Fixed Board Header */}
       <BoardBar board={boardData} />
+
+      {/* Scrollable Board Content - takes remaining height */}
       <BoardContent board={boardData} />
     </div>
   )
