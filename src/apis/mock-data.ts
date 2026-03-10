@@ -33,36 +33,48 @@ export const mockData: { board: Board } = {
             _id: 'card-id-01',
             boardId: 'board-id-01',
             columnId: 'column-id-01',
-            title: 'Title of card 01',
-            description: 'Markdown Syntax (sẽ ở khóa nâng cao nhé)',
-            cover:
-              'https://trungquandev.com/wp-content/uploads/2022/07/fair-mern-stack-advanced-banner-trungquandev.jpg',
+            title: 'Define technical requirements for the feature release',
+            description:
+              'Need to document all technical requirements including API endpoints, database schema, and infrastructure needs.',
+            priority: 'urgent',
+            assignee: 'Minh Tri',
+            reporter: 'John Doe',
+            dueDate: '2026-03-06',
+            createdAt: '2026-03-01',
+            updatedAt: '2026-03-05',
             memberIds: ['test-user-id-01'],
-            comments: ['test comment 01', 'test comment 02'],
-            attachments: [
-              'test attachment 01',
-              'test attachment 02',
-              'test attachment 03'
-            ]
+            comments: [
+              'Need to review API design',
+              'Database schema looks good'
+            ],
+            attachments: ['tech-spec.pdf', 'api-design.json']
           },
           {
             _id: 'card-id-02',
             boardId: 'board-id-01',
             columnId: 'column-id-01',
-            title: 'Title of card 02',
-            description: null,
-            cover: null,
+            title: 'Setup CI/CD pipeline for production',
+            description:
+              'Configure GitHub Actions for automated testing and deployment',
+            priority: 'high',
+            assignee: 'Sarah Johnson',
+            reporter: 'Minh Tri',
+            dueDate: '2026-03-10',
+            createdAt: '2026-03-02',
             memberIds: [],
-            comments: [],
+            comments: ['Working on Docker configuration'],
             attachments: []
           },
           {
             _id: 'card-id-03',
             boardId: 'board-id-01',
             columnId: 'column-id-01',
-            title: 'Title of card 03',
+            title: 'Design user authentication flow',
             description: null,
-            cover: null,
+            priority: 'medium',
+            assignee: 'Alex Chen',
+            dueDate: '2026-03-15',
+            createdAt: '2026-03-03',
             memberIds: [],
             comments: [],
             attachments: []
@@ -71,9 +83,12 @@ export const mockData: { board: Board } = {
             _id: 'card-id-04',
             boardId: 'board-id-01',
             columnId: 'column-id-01',
-            title: 'Title of card 04',
+            title: 'Write unit tests for API endpoints',
             description: null,
-            cover: null,
+            priority: 'low',
+            assignee: null,
+            dueDate: '2026-03-20',
+            createdAt: '2026-03-04',
             memberIds: [],
             comments: [],
             attachments: []
@@ -82,9 +97,12 @@ export const mockData: { board: Board } = {
             _id: 'card-id-05',
             boardId: 'board-id-01',
             columnId: 'column-id-01',
-            title: 'Title of card 05',
-            description: null,
-            cover: null,
+            title: 'Refactor database queries for performance',
+            description: 'Optimize slow queries and add proper indexes',
+            priority: 'medium',
+            assignee: 'David Lee',
+            dueDate: '2026-03-12',
+            createdAt: '2026-03-05',
             memberIds: [],
             comments: [],
             attachments: []
@@ -93,20 +111,26 @@ export const mockData: { board: Board } = {
             _id: 'card-id-06',
             boardId: 'board-id-01',
             columnId: 'column-id-01',
-            title: 'Title of card 06',
+            title: 'Update documentation for API v2',
             description: null,
-            cover: null,
+            priority: 'low',
+            assignee: 'Emma Wilson',
+            dueDate: '2026-03-25',
+            createdAt: '2026-03-06',
             memberIds: [],
             comments: [],
-            attachments: []
+            attachments: ['api-docs-v2.md']
           },
           {
             _id: 'card-id-07',
             boardId: 'board-id-01',
             columnId: 'column-id-01',
-            title: 'Title of card 07',
-            description: null,
-            cover: null,
+            title: 'Investigate production bug #2341',
+            description: 'Users reporting timeout errors on checkout page',
+            priority: 'urgent',
+            assignee: 'Minh Tri',
+            dueDate: '2026-03-07',
+            createdAt: '2026-03-06',
             memberIds: [],
             comments: [],
             attachments: []
@@ -125,7 +149,6 @@ export const mockData: { board: Board } = {
             columnId: 'column-id-02',
             title: 'Title of card 08',
             description: null,
-            cover: null,
             memberIds: [],
             comments: [],
             attachments: []
@@ -136,7 +159,6 @@ export const mockData: { board: Board } = {
             columnId: 'column-id-02',
             title: 'Title of card 09',
             description: null,
-            cover: null,
             memberIds: [],
             comments: [],
             attachments: []
@@ -147,7 +169,6 @@ export const mockData: { board: Board } = {
             columnId: 'column-id-02',
             title: 'Title of card 10',
             description: null,
-            cover: null,
             memberIds: [],
             comments: [],
             attachments: []
@@ -166,7 +187,6 @@ export const mockData: { board: Board } = {
             columnId: 'column-id-03',
             title: 'Title of card 11',
             description: null,
-            cover: null,
             memberIds: [],
             comments: [],
             attachments: []
@@ -177,7 +197,6 @@ export const mockData: { board: Board } = {
             columnId: 'column-id-03',
             title: 'Title of card 12',
             description: null,
-            cover: null,
             memberIds: [],
             comments: [],
             attachments: []
@@ -188,7 +207,6 @@ export const mockData: { board: Board } = {
             columnId: 'column-id-03',
             title: 'Title of card 13',
             description: null,
-            cover: null,
             memberIds: [],
             comments: [],
             attachments: []
@@ -199,15 +217,7 @@ export const mockData: { board: Board } = {
         _id: 'column-id-04',
         boardId: 'board-id-01',
         title: 'Empty Column 04',
-        /**
-         * Video 37.2: Cách xử lý bug logic thư viện Dnd-kit khi Column là rỗng:
-         * Phía FE sự tự tạo ra một cái card đặc biệt: Placeholder Card, không liên quan tới Back-end
-         * Card đặc biệt này sẽ được ẩn ở giao diện UI người dùng
-         * Cấu trúc Id của cái card này đề Unique rất đơn giản, không cần làm random phức tạp:
-         * "columnId-placeholder-card" (mỗi column chỉ có thể có tối đa một cái Placeholder Card)
-         * Quan trọng khi tạo: phải đầy đủ: (_id, boardId, columnId, FE_PlaceholderCard)
-         *** Kỹ hơn nữa về cách tạo chuẩn ở bước nào thì sẽ ở tích hợp API vào dự án
-         */
+
         cardOrderIds: ['column-id-04-placeholder-card'],
         cards: [
           {
