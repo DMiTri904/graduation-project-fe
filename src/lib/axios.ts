@@ -2,32 +2,35 @@ import axios from 'axios'
 import { API_URL } from '../core/env'
 
 export interface ApiResponse<T> {
-  success: boolean;
-  statusCode: number;
-  message: string;
-  data: T;
+  success: boolean
+  statusCode: number
+  message: string
+  data: T
 }
 
 const api = axios.create({
   baseURL: API_URL,
   timeout: 10000,
-  withCredentials: true
+  withCredentials: false, // Tắt credentials để tránh CORS preflight
+  headers: {
+    'Content-Type': 'application/json'
+  }
 })
 
 api.interceptors.request.use(
-  (config) => {
+  config => {
     const token = localStorage.getItem('accessToken')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
     return config
   },
-  (error) => Promise.reject(error)
+  error => Promise.reject(error)
 )
 
 api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
+  response => response,
+  async error => {
     const original = error.config
 
     if (error.response?.status === 401 && !original._retry) {

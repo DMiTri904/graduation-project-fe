@@ -15,11 +15,11 @@ export const LoginPage = () => {
     loading,
     canSubmit,
     onSubmit,
-    handleEmailKeyDown,
+    handleMssvKeyDown,
     handlePasswordKeyDown
   } = useLoginForm({
     onLoginSuccess: () => {
-      navigate('/')
+      navigate('/groups')
     }
   })
 
@@ -37,7 +37,7 @@ export const LoginPage = () => {
         loading={loading}
         canSubmit={canSubmit}
         onSubmit={onSubmit}
-        handleEmailKeyDown={handleEmailKeyDown}
+        handleMssvKeyDown={handleMssvKeyDown}
         handlePasswordKeyDown={handlePasswordKeyDown}
       />
     </div>

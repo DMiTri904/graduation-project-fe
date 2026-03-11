@@ -2,12 +2,24 @@ import { Search, Bell, Moon, HelpCircle } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { useNavigate, useLocation } from 'react-router-dom'
+
+const NAV_ITEMS = [
+  { label: 'Dashboard', path: '/' },
+  { label: 'My Groups', path: '/groups' },
+  { label: 'Accounts', path: '/account-management' }
+  // { label: 'Settings', path: '/settings' },
+]
 
 export default function MainLayout({
   children
 }: {
   children: React.ReactNode
 }) {
+  const navigate = useNavigate()
+  // Lấy đường dẫn hiện tại để check active state
+  const { pathname } = useLocation()
+
   return (
     <div className='flex h-screen w-full bg-white text-slate-900 overflow-hidden'>
       {/* 1. SIDEBAR (Bên trái) */}
@@ -22,21 +34,29 @@ export default function MainLayout({
             </div>
           </div>
 
-          {/* Navigation Items (Giả lập) */}
+          {/* Navigation Items (Đã dùng vòng lặp) */}
           <nav className='space-y-1'>
-            <Button
-              variant='secondary'
-              className='w-full justify-start text-blue-600 bg-blue-50'
-            >
-              Dashboard
-            </Button>
-            <Button
-              variant='ghost'
-              className='w-full justify-start text-slate-600'
-            >
-              My Groups
-            </Button>
-            {/* Thêm các menu khác ở đây... */}
+            {NAV_ITEMS.map(item => {
+              // Kiểm tra xem nút đang render có khớp với đường dẫn hiện tại không
+              const isActive = pathname === item.path
+
+              return (
+                <Button
+                  key={item.path}
+                  // Đổi variant của shadcn theo trạng thái active
+                  variant={isActive ? 'secondary' : 'ghost'}
+                  // Cập nhật class màu sắc tương ứng
+                  className={`w-full justify-start ${
+                    isActive
+                      ? 'text-blue-600 bg-blue-50' // Màu xanh khi đang ở trang đó
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' // Màu xám khi ở trang khác
+                  }`}
+                  onClick={() => navigate(item.path)}
+                >
+                  {item.label}
+                </Button>
+              )
+            })}
           </nav>
         </div>
 

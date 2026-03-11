@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
+import { User, Lock, Eye, EyeOff } from 'lucide-react'
 import type {
   FieldErrors,
   UseFormRegister,
@@ -20,8 +20,8 @@ interface LoginFormProps {
   clearErrors: UseFormClearErrors<LoginFormType>
   loading: boolean
   canSubmit: boolean
-  onSubmit: (data: LoginFormType) => Promise<void>
-  handleEmailKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void
+  onSubmit: (data: LoginFormType) => void
+  handleMssvKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void
   handlePasswordKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void
 }
 
@@ -33,7 +33,7 @@ export const LoginForm = ({
   loading,
   canSubmit,
   onSubmit,
-  handleEmailKeyDown,
+  handleMssvKeyDown,
   handlePasswordKeyDown
 }: LoginFormProps) => {
   const [showPassword, setShowPassword] = useState(false)
@@ -57,31 +57,31 @@ export const LoginForm = ({
 
           {/* Form */}
           <form className='space-y-1' onSubmit={handleSubmit(onSubmit)}>
-            {/* Email Field */}
+            {/* MSSV Field (Đã sửa từ Email) */}
             <div className='space-y-2'>
-              <Label htmlFor='email' className='text-gray-700'>
-                Email
+              <Label htmlFor='mssv' className='text-gray-700'>
+                MSSV
               </Label>
               <div className='relative'>
-                <Mail className='absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400' />
+                <User className='absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400' />
                 <Input
-                  id='email'
-                  type='email'
-                  placeholder='Enter your email'
+                  id='mssv'
+                  type='text'
+                  placeholder='Enter your MSSV'
                   className={`pl-10 h-11 ${
-                    errors.email
+                    errors.mssv
                       ? 'border-red-500 focus-visible:ring-red-500'
                       : ''
                   }`}
-                  {...register('email', {
-                    onChange: () => clearErrors('email')
+                  {...register('mssv', {
+                    onChange: () => clearErrors('mssv')
                   })}
-                  onKeyDown={handleEmailKeyDown}
+                  onKeyDown={handleMssvKeyDown}
                 />
               </div>
               <div className='min-h-5'>
-                {errors.email && (
-                  <p className='text-sm text-red-600'>{errors.email.message}</p>
+                {errors.mssv && (
+                  <p className='text-sm text-red-600'>{errors.mssv.message}</p>
                 )}
               </div>
             </div>

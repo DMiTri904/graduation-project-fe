@@ -1,106 +1,91 @@
-import { useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import { LoginSchema } from '../types/login';
-import type { LoginFormType } from '../types/login';
-import { useLogin } from './auth.hook';
-import { useNavigate } from 'react-router-dom';
-
+import { useForm } from 'react-hook-form'
+import { yupResolver } from '@hookform/resolvers/yup'
+import { LoginSchema, type LoginFormType } from '../types/login'
+// Import hook useLogin mà bạn vừa gửi (nhớ trỏ đúng đường dẫn file)
+import { useLogin } from './auth.hook'
 interface UseLoginFormProps {
-  onLoginSuccess?: () => void;
-  onLoginFail?: (errorMessage: string) => void;
+  onLoginSuccess: () => void // Hàm để navigate sang trang khác sau khi login thành công
 }
 
-interface UseLoginFormReturn {
-  register: ReturnType<typeof useForm<LoginFormType>>['register'];
-  handleSubmit: ReturnType<typeof useForm<LoginFormType>>['handleSubmit'];
-  errors: ReturnType<typeof useForm<LoginFormType>>['formState']['errors'];
-  watch: ReturnType<typeof useForm<LoginFormType>>['watch'];
-  setFocus: ReturnType<typeof useForm<LoginFormType>>['setFocus'];
-  clearErrors: ReturnType<typeof useForm<LoginFormType>>['clearErrors'];
-  loading: boolean;
-  canSubmit: boolean;
-  onSubmit: (data: LoginFormType) => Promise<void>;
-  handleEmailKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
-  handlePasswordKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
-}
+export const useLoginForm = ({ onLoginSuccess }: UseLoginFormProps) => {
+  // 1. Gọi hook useLogin để lấy hàm mutate (gọi API) và trạng thái isPending (loading)
+  const { mutate: loginMutate, isPending } = useLogin()
 
-export const useLoginForm = ({
-  onLoginSuccess,
-  onLoginFail,
-}: UseLoginFormProps): UseLoginFormReturn => {
+  // 2. Setup React Hook Form
   const {
     register,
     handleSubmit,
-    formState: { errors },
-    watch,
-    setFocus,
+    formState: { errors, isValid },
     clearErrors,
+    setError
   } = useForm<LoginFormType>({
     resolver: yupResolver(LoginSchema),
-    mode: 'onBlur',
-    reValidateMode: 'onBlur',
-  });
+    mode: 'onChange' // Validate ngay khi người dùng gõ
+  })
 
-  const { mutate: loginMutation, isPending } = useLogin();
-  const navigate = useNavigate();
+  // 3. Hàm xử lý khi ấn nút Sign In
+  const onSubmit = (data: LoginFormType) => {
+    // Gọi hàm mutate và truyền data vào
+    loginMutate(data, {
+      onSuccess: response => {
+        // Lấy token từ response theo cấu trúc API trả về
+        // Swagger trả về: { success: true, data: { accessToken, refreshToken } }
+        const accessToken = response?.data?.accessToken
+        const refreshToken = response?.data?.refreshToken
 
-  const emailValue = watch('email');
-  const passwordValue = watch('password');
-
-  // Button is activated when both fields have values and no errors
-  const canSubmit: boolean =
-    !!emailValue && !!passwordValue && !errors.email && !errors.password && !isPending;
-
-  const onSubmit = async (data: LoginFormType) => {
-    if (!canSubmit) return;
-
-    loginMutation(data, {
-      onSuccess: (response) => {
-        if (response.data.accessToken) {
-          localStorage.setItem('accessToken', response.data.accessToken);
+        if (accessToken) {
+          localStorage.setItem('accessToken', accessToken)
         }
-        if (response.data.refreshToken) {
-          localStorage.setItem('refreshToken', response.data.refreshToken);
+        if (refreshToken) {
+          localStorage.setItem('refreshToken', refreshToken)
         }
-        navigate('/');
-        onLoginSuccess?.();
+
+        // Chuyển hướng sang trang /groups
+        onLoginSuccess()
       },
       onError: (error: any) => {
-        const apiErrorMessage = error.response?.data?.message || error.message || 'Login failed';
-        onLoginFail?.(apiErrorMessage);
-      },
-    });
-  };
+        // Backend trả về: { code: "", message: "Tài khoản không tồn tại" }
+        // Lấy message từ response body
+        const errorMessage =
+          error.response?.data?.message ||
+          error.message ||
+          'MSSV hoặc mật khẩu không chính xác.'
 
-  // After filling email, pressing Enter/Tab moves cursor to Password field
-  const handleEmailKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' || e.key === 'Tab') {
-      e.preventDefault();
-      setFocus('password');
+        console.log('Login error:', error.response?.data) // Debug
+
+        setError('password', {
+          type: 'manual',
+          message: errorMessage
+        })
+      }
+    })
+  }
+
+  // 4. Các hàm hỗ trợ phím Enter cho UX mượt hơn
+  const handleMssvKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      document.getElementById('password')?.focus()
     }
-  };
+  }
 
-  // Pressing Enter in Password field activates Login button (if valid)
   const handlePasswordKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      e.preventDefault();
-      if (canSubmit) {
-        handleSubmit(onSubmit)();
-      }
+      e.preventDefault()
+      handleSubmit(onSubmit)()
     }
-  };
+  }
 
+  // 5. Trả về các biến để file giao diện (LoginForm.tsx) lấy xài
   return {
     register,
     handleSubmit,
     errors,
-    watch,
-    setFocus,
     clearErrors,
-    loading: isPending,
-    canSubmit,
+    loading: isPending, // Truyền isPending của React Query vào biến loading của UI
+    canSubmit: isValid && !isPending, // Chỉ cho bấm khi form hợp lệ và không đang loading
     onSubmit,
-    handleEmailKeyDown,
-    handlePasswordKeyDown,
-  };
-};
+    handleMssvKeyDown,
+    handlePasswordKeyDown
+  }
+}
