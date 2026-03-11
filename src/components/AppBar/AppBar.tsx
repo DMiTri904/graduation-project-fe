@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import ModeSelect from '~/components/ModeSelect/ModeSelect'
 import AppsIcon from '@mui/icons-material/Apps'
@@ -17,29 +18,43 @@ import Tooltip from '@mui/material/Tooltip'
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
 import Profiles from './Menus/Profiles'
 import AddToPhotosIcon from '@mui/icons-material/AddToPhotos'
+import GroupsIcon from '@mui/icons-material/Groups'
 import SearchIcon from '@mui/icons-material/Search'
 import InputAdornment from '@mui/material/InputAdornment'
 import CloseIcon from '@mui/icons-material/Close'
 
 function AppBar() {
   const [searchValue, setSearchValue] = useState('')
+  const navigate = useNavigate()
+
   return (
-    <Box sx={{
-      width: '100%',
-      height: (theme) => theme.trello.appBarHeight,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: 2,
-      paddingX: 2,
-      overflowX: 'auto',
-      bgcolor: (theme) => (theme.palette.mode === 'dark' ? '#2c3e50' : '#1565c0')
-    }}>
+    <Box
+      sx={{
+        width: '100%',
+        height: theme => theme.trello.appBarHeight,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 2,
+        paddingX: 2,
+        overflowX: 'auto',
+        bgcolor: theme =>
+          theme.palette.mode === 'dark' ? '#2c3e50' : '#1565c0'
+      }}
+    >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         <AppsIcon sx={{ color: 'white' }} />
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-          <SvgIcon component={TrelloIcon} fontSize="small" inheritViewBox sx={{ color: 'white' }} />
-          <Typography component="span" sx={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'white' }}>
+          <SvgIcon
+            component={TrelloIcon}
+            fontSize='small'
+            inheritViewBox
+            sx={{ color: 'white' }}
+          />
+          <Typography
+            component='span'
+            sx={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'white' }}
+          >
             Trello
           </Typography>
         </Box>
@@ -55,7 +70,24 @@ function AppBar() {
               border: 'none',
               '&:hover': { border: 'none' }
             }}
-            variant="outlined"
+            variant='outlined'
+            startIcon={<GroupsIcon />}
+            onClick={e => {
+              e.preventDefault()
+              e.stopPropagation()
+              console.log('Navigating to /groups')
+              navigate('/groups')
+            }}
+          >
+            My Groups
+          </Button>
+          <Button
+            sx={{
+              color: 'white',
+              border: 'none',
+              '&:hover': { border: 'none' }
+            }}
+            variant='outlined'
             startIcon={<AddToPhotosIcon />}
           >
             Created
@@ -65,22 +97,25 @@ function AppBar() {
 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         <TextField
-          id="outlined-search"
-          label="Search..."
-          type="text"
-          size="small"
+          id='outlined-search'
+          label='Search...'
+          type='text'
+          size='small'
           value={searchValue}
-          onChange={(e) => setSearchValue(e.target.value)}
+          onChange={e => setSearchValue(e.target.value)}
           InputProps={{
             startAdornment: (
-              <InputAdornment position="start">
+              <InputAdornment position='start'>
                 <SearchIcon sx={{ color: 'white' }} />
               </InputAdornment>
             ),
             endAdornment: (
               <CloseIcon
                 fontSize='small'
-                sx={{ color: searchValue ? 'white' : 'transparent', cursor: 'pointer' }}
+                sx={{
+                  color: searchValue ? 'white' : 'transparent',
+                  cursor: 'pointer'
+                }}
                 onClick={() => setSearchValue('')}
               />
             )
@@ -100,18 +135,17 @@ function AppBar() {
         />
         <ModeSelect />
 
-        <Tooltip title="Notifications">
-          <Badge color="warning" variant="dot" sx={{ cursor: 'pointer' }}>
+        <Tooltip title='Notifications'>
+          <Badge color='warning' variant='dot' sx={{ cursor: 'pointer' }}>
             <NotificationsNoneIcon sx={{ color: 'white' }} />
           </Badge>
         </Tooltip>
 
-        <Tooltip title="Help">
+        <Tooltip title='Help'>
           <HelpOutlineIcon sx={{ cursor: 'pointer', color: 'white' }} />
         </Tooltip>
 
         <Profiles />
-
       </Box>
     </Box>
   )

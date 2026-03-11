@@ -1,72 +1,32 @@
-import { Plus, UserPlus, User, TrendingUp } from 'lucide-react'
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Plus, UserPlus, User, TrendingUp, FileUp, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription
-} from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
-
-// TypeScript Interface
-interface Group {
-  id: string
-  name: string
-  subject: string
-  membersCount: number
-  maxMembers: number
-  progress: number
-}
-
-// Mock Data
-const MOCK_GROUPS: Group[] = [
-  {
-    id: 'group-001',
-    name: 'MERN Stack E-commerce',
-    subject: 'Web Development',
-    membersCount: 4,
-    maxMembers: 5,
-    progress: 75
-  },
-  {
-    id: 'group-002',
-    name: 'React Native Mobile App',
-    subject: 'Mobile Development',
-    membersCount: 3,
-    maxMembers: 4,
-    progress: 45
-  },
-  {
-    id: 'group-003',
-    name: 'AI Chatbot with Python',
-    subject: 'Artificial Intelligence',
-    membersCount: 5,
-    maxMembers: 5,
-    progress: 90
-  },
-  {
-    id: 'group-004',
-    name: 'Cloud Infrastructure Project',
-    subject: 'DevOps & Cloud',
-    membersCount: 2,
-    maxMembers: 6,
-    progress: 30
-  }
-]
+import { useGetGroups } from '../hooks/useGroups'
+import CreateGroupModal from './CreateGroupModal'
+import JoinGroupModal from './JoinGroupModal'
+import ImportFileDialog from './ImportFileDialog'
 
 export default function GroupDashboard() {
-  const handleCreateGroup = () => {
-    console.log('Create new group')
-  }
+  const navigate = useNavigate()
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isJoinModalOpen, setIsJoinModalOpen] = useState(false)
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false)
 
-  const handleJoinGroup = () => {
-    console.log('Join existing group')
-  }
+  // Fetch groups using React Query
+  const { data: groups = [], isLoading, isError, refetch } = useGetGroups()
 
   const handleViewGroup = (groupId: string) => {
-    console.log('View group:', groupId)
+    // Navigate to group detail page (you'll need to create this route)
+    navigate(`/groups/${groupId}`)
+  }
+
+  const handleImportSuccess = () => {
+    console.log('Import success! Reloading data...')
+    refetch()
   }
 
   const getProgressColor = (progress: number) => {
@@ -74,6 +34,36 @@ export default function GroupDashboard() {
     if (progress >= 50) return 'bg-blue-500'
     if (progress >= 25) return 'bg-yellow-500'
     return 'bg-slate-400'
+  }
+
+  // Loading State
+  if (isLoading) {
+    return (
+      <div className='container mx-auto p-6'>
+        <div className='flex flex-col items-center justify-center py-20'>
+          <Loader2 className='h-12 w-12 animate-spin text-blue-600 mb-4' />
+          <p className='text-slate-600'>Đang tải danh sách nhóm...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Error State
+  if (isError) {
+    return (
+      <div className='container mx-auto p-6'>
+        <div className='flex flex-col items-center justify-center py-20'>
+          <div className='text-red-500 mb-4'>❌</div>
+          <h3 className='text-xl font-semibold text-slate-900 mb-2'>
+            Không thể tải dữ liệu
+          </h3>
+          <p className='text-slate-600 mb-4'>
+            Có lỗi xảy ra khi tải danh sách nhóm
+          </p>
+          <Button onClick={() => refetch()}>Thử lại</Button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -90,78 +80,90 @@ export default function GroupDashboard() {
         </div>
 
         <div className='flex gap-3'>
-          <Button onClick={handleCreateGroup} className='gap-2'>
+          <Button onClick={() => setIsCreateModalOpen(true)} className='gap-2'>
             <Plus className='h-4 w-4' />
             Create Group
           </Button>
-          <Button onClick={handleJoinGroup} variant='outline' className='gap-2'>
+          <Button
+            onClick={() => setIsJoinModalOpen(true)}
+            variant='outline'
+            className='gap-2'
+          >
             <UserPlus className='h-4 w-4' />
             Join Group
+          </Button>
+          <Button
+            onClick={() => setIsImportDialogOpen(true)}
+            variant='secondary'
+            className='gap-2'
+          >
+            <FileUp className='h-4 w-4' />
+            Import
           </Button>
         </div>
       </div>
 
       {/* Groups Grid */}
-      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'>
-        {MOCK_GROUPS.map(group => (
-          <Card
-            key={group.id}
-            className='hover:shadow-lg transition-shadow cursor-pointer group'
-            onClick={() => handleViewGroup(group.id)}
-          >
-            <CardHeader className='pb-3'>
-              <div className='flex items-start justify-between mb-2'>
-                <Badge variant='secondary' className='text-xs'>
-                  {group.subject}
-                </Badge>
-                <TrendingUp
-                  className={`h-4 w-4 ${
-                    group.progress >= 50 ? 'text-green-500' : 'text-slate-400'
-                  }`}
-                />
-              </div>
-              <CardTitle className='text-lg group-hover:text-blue-600 transition-colors'>
-                {group.name}
-              </CardTitle>
-            </CardHeader>
-
-            <CardContent className='space-y-4'>
-              {/* Members Count */}
-              <div className='flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400'>
-                <User className='h-4 w-4' />
-                <span className='font-medium'>
-                  {group.membersCount} / {group.maxMembers} members
-                </span>
-                {group.membersCount === group.maxMembers && (
-                  <Badge variant='outline' className='ml-auto text-xs'>
-                    Full
+      {groups.length > 0 ? (
+        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'>
+          {groups.map(group => (
+            <Card
+              key={group.id}
+              className='hover:shadow-lg transition-shadow cursor-pointer group'
+              onClick={() => handleViewGroup(group.id)}
+            >
+              <CardHeader className='pb-3'>
+                <div className='flex items-start justify-between mb-2'>
+                  <Badge variant='secondary' className='text-xs'>
+                    {group.category}
                   </Badge>
-                )}
-              </div>
-
-              {/* Progress Section */}
-              <div className='space-y-2'>
-                <div className='flex items-center justify-between text-sm'>
-                  <span className='text-slate-600 dark:text-slate-400 font-medium'>
-                    Progress
-                  </span>
-                  <span className='font-bold text-slate-900 dark:text-slate-100'>
-                    {group.progress}%
-                  </span>
+                  <TrendingUp
+                    className={`h-4 w-4 ${
+                      group.progress >= 50 ? 'text-green-500' : 'text-slate-400'
+                    }`}
+                  />
                 </div>
-                <Progress
-                  value={group.progress}
-                  className='h-2'
-                  indicatorClassName={getProgressColor(group.progress)}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                <CardTitle className='text-lg group-hover:text-blue-600 transition-colors'>
+                  {group.name}
+                </CardTitle>
+              </CardHeader>
 
-      {/* Empty State (optional) */}
-      {MOCK_GROUPS.length === 0 && (
+              <CardContent className='space-y-4'>
+                {/* Members Count */}
+                <div className='flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400'>
+                  <User className='h-4 w-4' />
+                  <span className='font-medium'>
+                    {group.memberCount} / {group.maxMembers} members
+                  </span>
+                  {group.memberCount === group.maxMembers && (
+                    <Badge variant='outline' className='ml-auto text-xs'>
+                      Full
+                    </Badge>
+                  )}
+                </div>
+
+                {/* Progress Section */}
+                <div className='space-y-2'>
+                  <div className='flex items-center justify-between text-sm'>
+                    <span className='text-slate-600 dark:text-slate-400 font-medium'>
+                      Progress
+                    </span>
+                    <span className='font-bold text-slate-900 dark:text-slate-100'>
+                      {group.progress}%
+                    </span>
+                  </div>
+                  <Progress
+                    value={group.progress}
+                    className='h-2'
+                    indicatorClassName={getProgressColor(group.progress)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        /* Empty State */
         <div className='flex flex-col items-center justify-center py-16 text-center'>
           <div className='rounded-full bg-slate-100 dark:bg-slate-800 p-6 mb-4'>
             <User className='h-12 w-12 text-slate-400' />
@@ -174,12 +176,15 @@ export default function GroupDashboard() {
             collaborating on projects.
           </p>
           <div className='flex gap-3'>
-            <Button onClick={handleCreateGroup} className='gap-2'>
+            <Button
+              onClick={() => setIsCreateModalOpen(true)}
+              className='gap-2'
+            >
               <Plus className='h-4 w-4' />
               Create Group
             </Button>
             <Button
-              onClick={handleJoinGroup}
+              onClick={() => setIsJoinModalOpen(true)}
               variant='outline'
               className='gap-2'
             >
@@ -189,6 +194,25 @@ export default function GroupDashboard() {
           </div>
         </div>
       )}
+
+      {/* Modals */}
+      <CreateGroupModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={() => refetch()}
+      />
+
+      <JoinGroupModal
+        isOpen={isJoinModalOpen}
+        onClose={() => setIsJoinModalOpen(false)}
+        onSuccess={() => refetch()}
+      />
+
+      <ImportFileDialog
+        isOpen={isImportDialogOpen}
+        onClose={() => setIsImportDialogOpen(false)}
+        onSuccess={handleImportSuccess}
+      />
     </div>
   )
 }

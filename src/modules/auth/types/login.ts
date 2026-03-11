@@ -1,21 +1,23 @@
-import * as yup from 'yup';
+import * as yup from 'yup'
 
-export const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+// Regex kiểm tra MSSV: Bắt buộc CHÍNH XÁC 8 chữ số
+export const MSSV_REGEX = /^[0-9]{8}$/
 
 export const ERROR_MESSAGES = {
-  invalidEmail: 'Invalid email.',
-  requiredEmail: 'Please enter Email.',
-  requiredPassword: 'Please enter Password.',
-  incorrectCredentials: 'Username or password is incorrect.',
-  accountLocked: 'Your account has been temporarily locked due to too many failed login attempts.',
-};
+  invalidMssv: 'MSSV không hợp lệ (phải gồm chính xác 8 chữ số).',
+  requiredMssv: 'Vui lòng nhập MSSV.',
+  requiredPassword: 'Vui lòng nhập Mật khẩu.',
+  incorrectCredentials: 'MSSV hoặc mật khẩu không chính xác.',
+  accountLocked:
+    'Tài khoản của bạn đã bị khóa tạm thời do nhập sai quá nhiều lần.'
+}
 
 export const LoginSchema = yup.object().shape({
-  email: yup
+  mssv: yup
     .string()
-    .required(ERROR_MESSAGES.requiredEmail)
-    .matches(EMAIL_REGEX, ERROR_MESSAGES.invalidEmail),
-  password: yup.string().required(ERROR_MESSAGES.requiredPassword),
-});
+    .required(ERROR_MESSAGES.requiredMssv)
+    .matches(MSSV_REGEX, ERROR_MESSAGES.invalidMssv),
+  password: yup.string().required(ERROR_MESSAGES.requiredPassword)
+})
 
-export type LoginFormType = yup.InferType<typeof LoginSchema>;
+export type LoginFormType = yup.InferType<typeof LoginSchema>
