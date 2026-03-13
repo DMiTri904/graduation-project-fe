@@ -7,6 +7,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 const NAV_ITEMS = [
   { label: 'Dashboard', path: '/' },
   { label: 'My Groups', path: '/groups' },
+  { label: 'My Classes', path: '/classes' },
   { label: 'Accounts', path: '/account-management' }
   // { label: 'Settings', path: '/settings' },
 ]
@@ -38,7 +39,10 @@ export default function MainLayout({
           <nav className='space-y-1'>
             {NAV_ITEMS.map(item => {
               // Kiểm tra xem nút đang render có khớp với đường dẫn hiện tại không
-              const isActive = pathname === item.path
+              const isActive =
+                item.path === '/'
+                  ? pathname === '/'
+                  : pathname === item.path || pathname.startsWith(`${item.path}/`)
 
               return (
                 <Button

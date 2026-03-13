@@ -7,6 +7,8 @@ import GroupsPage from '~/modules/groups/pages/GroupsPage'
 import GroupDetailPage from '~/modules/groups/pages/GroupDetailPage'
 import AccountManagementPage from '~/modules/admin/pages/AccountManagementPage'
 import ResetPasswordPage from '@/modules/auth/pages/resetPasswordPage'
+import MyClassesPage from '~/modules/classes/pages/MyClassesPage'
+import ClassDetailPage from '~/modules/classes/pages/ClassDetailPage'
 
 export const router = createBrowserRouter([
   {
@@ -42,6 +44,22 @@ export const router = createBrowserRouter([
     element: (
       <MainLayout>
         <GroupDetailPage />
+      </MainLayout>
+    )
+  },
+  {
+    path: '/classes',
+    element: (
+      <MainLayout>
+        <MyClassesPage />
+      </MainLayout>
+    )
+  },
+  {
+    path: '/classes/:id',
+    element: (
+      <MainLayout>
+        <ClassDetailPage />
       </MainLayout>
     )
   },
