@@ -33,13 +33,33 @@ export const login = async (
 }
 
 /**
- * Forgot Password API
+ * Forgot Password Payload
  */
-export const forgotPassword = async (payload: {
-  mssv: string
-}): Promise<ApiResponse<any>> => {
+export interface ForgotPasswordPayload {
+  email: string
+  clientUri: string
+}
+
+/**
+ * Reset Password Payload
+ */
+export interface ResetPasswordPayload {
+  email: string
+  token: string
+  newPassword: string
+  passwordConfirm: string
+}
+
+/**
+ * Forgot Password API
+ * Endpoint: POST /api/Auth/forgot-password
+ * Sends reset password link to email
+ */
+export const forgotPasswordAPI = async (
+  payload: ForgotPasswordPayload
+): Promise<ApiResponse<any>> => {
   const { data } = await api.post<ApiResponse<any>>(
-    '/api/Auth/forgot-password',
+    '/Auth/forgot-password',
     payload
   )
   return data
@@ -47,6 +67,34 @@ export const forgotPassword = async (payload: {
 
 /**
  * Reset Password API
+ * Endpoint: POST /api/Auth/reset-password
+ * Resets password using token from email
+ */
+export const resetPasswordAPI = async (
+  payload: ResetPasswordPayload
+): Promise<ApiResponse<any>> => {
+  const { data } = await api.post<ApiResponse<any>>(
+    '/Auth/reset-password',
+    payload
+  )
+  return data
+}
+
+/**
+ * @deprecated Use forgotPasswordAPI instead
+ */
+export const forgotPassword = async (payload: {
+  email: string
+}): Promise<ApiResponse<any>> => {
+  const { data } = await api.post<ApiResponse<any>>('/Auth/forgot-password', {
+    email: payload.email,
+    clientUri: 'http://localhost:5173/reset-password'
+  })
+  return data
+}
+
+/**
+ * @deprecated Use resetPasswordAPI instead
  */
 export const resetPassword = async (
   payload: any

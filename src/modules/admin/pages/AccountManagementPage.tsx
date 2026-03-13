@@ -1,30 +1,20 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Upload, Plus } from 'lucide-react'
 import AccountsTable from '../components/AccountsTable'
 import { mockAccounts } from '../types/account'
+import ImportFileDialog from '../components/ImportFileDialog'
 
 export default function AccountManagementPage() {
   const [accounts] = useState(mockAccounts)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false)
 
   const handleImportClick = () => {
-    fileInputRef.current?.click()
+    setIsImportDialogOpen(true)
   }
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      console.log('Selected file:', file.name)
-      console.log('File type:', file.type)
-      console.log('File size:', file.size, 'bytes')
-
-      // TODO: Handle file upload and parsing
-      alert(`Đã chọn file: ${file.name}`)
-
-      // Reset input
-      event.target.value = ''
-    }
+  const handleImportSuccess = () => {
+    console.log('Import account file successfully')
   }
 
   const handleAddAccount = () => {
@@ -48,7 +38,6 @@ export default function AccountManagementPage() {
             Thêm tài khoản
           </Button>
 
-          {/* Import Excel Button */}
           <Button
             variant='outline'
             onClick={handleImportClick}
@@ -58,13 +47,10 @@ export default function AccountManagementPage() {
             Import Excel
           </Button>
 
-          {/* Hidden File Input */}
-          <input
-            ref={fileInputRef}
-            type='file'
-            accept='.xlsx,.csv'
-            onChange={handleFileChange}
-            className='hidden'
+          <ImportFileDialog
+            isOpen={isImportDialogOpen}
+            onClose={() => setIsImportDialogOpen(false)}
+            onSuccess={handleImportSuccess}
           />
         </div>
       </div>

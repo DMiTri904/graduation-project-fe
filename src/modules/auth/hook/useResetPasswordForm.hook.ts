@@ -20,19 +20,26 @@ export const useResetPasswordForm = ({
   const {
     register,
     handleSubmit,
-    formState: { errors, isValid },
-    clearErrors
+    formState: { errors },
+    clearErrors,
+    watch,
+    setError
   } = useForm<ResetPasswordFormType>({
     resolver: yupResolver(ResetPasswordSchema),
     mode: 'onChange'
   })
+
+  const newPassword = watch('newPassword')
+  const passwordConfirm = watch('passwordConfirm')
+  const canSubmit = !!newPassword && !!passwordConfirm && !loading
 
   const handleFormSubmit = async (data: ResetPasswordFormType) => {
     try {
       setLoading(true)
       await onSubmit(data)
     } catch (error) {
-      console.error('Reset password error:', error)
+      const err = error as any
+      console.error('Reset password error:', err.response?.data)
     } finally {
       setLoading(false)
     }
@@ -54,13 +61,14 @@ export const useResetPasswordForm = ({
 
   return {
     register,
-    handleSubmit: handleSubmit(handleFormSubmit),
+    onSubmit: handleSubmit(handleFormSubmit),
     errors,
     clearErrors,
     loading,
-    canSubmit: isValid && !loading,
+    canSubmit,
     handlePasswordKeyDown,
     handleConfirmKeyDown,
-    email
+    email,
+    setError
   }
 }
