@@ -100,7 +100,7 @@ export default function ClassDetailPage() {
               </div>
 
               {/* Join Code Display */}
-              <div className='bg-blue-50 border-2 border-blue-200 rounded-lg p-4 min-w-[200px]'>
+              <div className='bg-blue-50 border-2 border-blue-200 rounded-lg p-4 min-w-50'>
                 <p className='text-xs text-blue-600 font-semibold mb-2'>
                   MÃ THAM GIA LỚP HỌC
                 </p>
@@ -184,7 +184,7 @@ export default function ClassDetailPage() {
             {ungroupedStudents.length > 0 && (
               <Badge
                 variant='destructive'
-                className='ml-2 h-5 min-w-5 rounded-full p-1'
+                className='ml-2 h-5 min-w-5 rounded-full p-1 flex justify-center align-center'
               >
                 {ungroupedStudents.length}
               </Badge>

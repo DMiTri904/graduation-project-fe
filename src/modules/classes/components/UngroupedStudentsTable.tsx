@@ -61,10 +61,10 @@ export default function UngroupedStudentsTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className='w-[100px]'>MSSV</TableHead>
+              <TableHead className='w-25'>MSSV</TableHead>
               <TableHead>Họ và tên</TableHead>
               <TableHead>Email</TableHead>
-              <TableHead className='text-right w-[200px]'>Thao tác</TableHead>
+              <TableHead className='text-right w-50'>Thao tác</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
