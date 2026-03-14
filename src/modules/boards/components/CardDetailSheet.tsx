@@ -244,7 +244,7 @@ export default function CardDetailSheet({
                   ) : (
                     <div
                       onClick={() => setIsEditingDescription(true)}
-                      className='min-h-[120px] rounded-md border border-slate-200 bg-slate-50 px-3 py-2 cursor-pointer hover:bg-slate-100 transition-colors text-sm mt-2 whitespace-pre-wrap'
+                      className='min-h-30 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 cursor-pointer hover:bg-slate-100 transition-colors text-sm mt-2 whitespace-pre-wrap'
                     >
                       {card.description || (
                         <span className='text-slate-400'>

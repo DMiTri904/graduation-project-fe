@@ -12,7 +12,7 @@ export const importFileAPI = async (file: File) => {
     formData.append('file', file)
 
     // Make POST request with multipart/form-data content type
-    const response = await api.post('http://localhost:5000/import', formData, {
+    const response = await api.post('user/import', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }

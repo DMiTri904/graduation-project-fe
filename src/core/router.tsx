@@ -9,6 +9,8 @@ import AccountManagementPage from '~/modules/admin/pages/AccountManagementPage'
 import ResetPasswordPage from '@/modules/auth/pages/resetPasswordPage'
 import MyClassesPage from '~/modules/classes/pages/MyClassesPage'
 import ClassDetailPage from '~/modules/classes/pages/ClassDetailPage'
+import ProfilePage from '~/modules/user/pages/ProfilePage'
+import ChangePasswordPage from '~/modules/user/pages/ChangePasswordPage'
 
 export const router = createBrowserRouter([
   {
@@ -68,6 +70,22 @@ export const router = createBrowserRouter([
     element: (
       <MainLayout>
         <AccountManagementPage />
+      </MainLayout>
+    )
+  },
+  {
+    path: '/profile',
+    element: (
+      <MainLayout>
+        <ProfilePage />
+      </MainLayout>
+    )
+  },
+  {
+    path: '/change-password',
+    element: (
+      <MainLayout>
+        <ChangePasswordPage />
       </MainLayout>
     )
   }

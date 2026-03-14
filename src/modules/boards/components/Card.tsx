@@ -329,7 +329,7 @@ function TrelloCard({ card }: CardProps) {
                           </div>
                         </div>
                         {card.assignee === member.name && (
-                          <CheckCircle2 className='h-4 w-4 text-blue-600 flex-shrink-0' />
+                          <CheckCircle2 className='h-4 w-4 text-blue-600 shrink-0' />
                         )}
                       </button>
                     ))}

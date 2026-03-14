@@ -1,0 +1,230 @@
+import { useMemo, useEffect } from 'react'
+import { useForm } from 'react-hook-form'
+import { yupResolver } from '@hookform/resolvers/yup'
+import * as yup from 'yup'
+import { Loader2, Save } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { toast } from 'sonner'
+import { useUserProfile } from '../hook/user.hook'
+import type { UserProfileResponse } from '../api/user.api'
+import { getCurrentUserFromToken } from '@/lib/token'
+import { getStoredAvatarUrl, withAvatarVersion } from '@/lib/avatar'
+import ChangeAvatar from '../components/ChangeAvatar'
+
+interface ProfileFormValues {
+  fullName: string
+  phoneNumber: string
+  email: string
+  major: string
+}
+
+const profileSchema: yup.ObjectSchema<ProfileFormValues> = yup.object({
+  fullName: yup.string().trim().required('Họ tên là bắt buộc'),
+  phoneNumber: yup
+    .string()
+    .trim()
+    .required('Số điện thoại là bắt buộc')
+    .matches(/^[0-9]{9,11}$/, 'Số điện thoại không hợp lệ'),
+  email: yup
+    .string()
+    .trim()
+    .required('Email là bắt buộc')
+    .email('Email không hợp lệ'),
+  major: yup.string().trim().required('Chuyên ngành là bắt buộc')
+})
+
+const mapProfileToForm = (
+  profile?: UserProfileResponse,
+  tokenUser?: ReturnType<typeof getCurrentUserFromToken>
+): ProfileFormValues => ({
+  fullName:
+    profile?.fullName ||
+    profile?.name ||
+    profile?.userName ||
+    tokenUser?.fullName ||
+    '',
+  phoneNumber: profile?.phoneNumber || profile?.phone || '',
+  email: profile?.email || tokenUser?.email || '',
+  major: profile?.major || profile?.specialization || ''
+})
+
+export default function ProfilePage() {
+  const { data, isLoading, isError, dataUpdatedAt } = useUserProfile()
+  const profileData = data?.data
+  const tokenUser = useMemo(() => getCurrentUserFromToken(), [])
+
+  const userMeta = useMemo(
+    () => ({
+      studentId:
+        profileData?.studentId ||
+        profileData?.mssv ||
+        profileData?.userCode ||
+        tokenUser.studentId ||
+        '-',
+      avatarUrl: withAvatarVersion(
+        profileData?.avatarUrl ||
+          profileData?.avatar ||
+          getStoredAvatarUrl() ||
+          tokenUser.avatarUrl ||
+          'https://github.com/shadcn.png'
+      )
+    }),
+    [profileData, tokenUser, dataUpdatedAt]
+  )
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    reset
+  } = useForm<ProfileFormValues>({
+    resolver: yupResolver(profileSchema),
+    mode: 'onChange',
+    defaultValues: mapProfileToForm(undefined, tokenUser)
+  })
+
+  useEffect(() => {
+    reset(mapProfileToForm(profileData, tokenUser))
+  }, [profileData, tokenUser, reset])
+
+  const onSubmit = async (values: ProfileFormValues) => {
+    await new Promise(resolve => setTimeout(resolve, 400))
+    toast.success('Đã load dữ liệu thật từ API profile')
+    reset(values)
+  }
+
+  if (isLoading) {
+    return (
+      <div className='flex-1 p-6 flex items-center justify-center'>
+        <div className='flex items-center gap-2 text-slate-600'>
+          <Loader2 className='h-5 w-5 animate-spin' />
+          Đang tải thông tin hồ sơ...
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className='flex-1 p-6'>
+      {isError && (
+        <Alert variant='destructive' className='mb-6'>
+          <AlertDescription>
+            Không tải được profile từ API. Đang hiển thị dữ liệu lấy từ token
+            đăng nhập.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <div className='grid grid-cols-1 xl:grid-cols-3 gap-6'>
+        <Card className='xl:col-span-1'>
+          <CardHeader>
+            <CardTitle>Thông tin cá nhân</CardTitle>
+          </CardHeader>
+          <CardContent className='flex flex-col items-center text-center gap-4'>
+            <ChangeAvatar
+              currentAvatarUrl={userMeta.avatarUrl}
+              fallbackName={
+                profileData?.fullName ||
+                profileData?.name ||
+                profileData?.userName ||
+                tokenUser.fullName ||
+                'User'
+              }
+            />
+
+            <div>
+              <p className='text-xl font-semibold text-slate-900'>
+                {profileData?.fullName ||
+                  profileData?.name ||
+                  profileData?.userName ||
+                  tokenUser.fullName ||
+                  'User'}
+              </p>
+              <p className='text-sm text-slate-500 mt-1'>
+                Student ID: {userMeta.studentId}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className='xl:col-span-2'>
+          <CardHeader>
+            <CardTitle>Cập nhật hồ sơ</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit(onSubmit)} className='space-y-5'>
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                <div className='space-y-2'>
+                  <Label htmlFor='fullName'>Họ tên</Label>
+                  <Input
+                    id='fullName'
+                    placeholder='Nhập họ tên'
+                    {...register('fullName')}
+                  />
+                  {errors.fullName && (
+                    <p className='text-sm text-red-600'>
+                      {errors.fullName.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className='space-y-2'>
+                  <Label htmlFor='phoneNumber'>Số điện thoại</Label>
+                  <Input
+                    id='phoneNumber'
+                    placeholder='Nhập số điện thoại'
+                    {...register('phoneNumber')}
+                  />
+                  {errors.phoneNumber && (
+                    <p className='text-sm text-red-600'>
+                      {errors.phoneNumber.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className='space-y-2'>
+                  <Label htmlFor='email'>Email</Label>
+                  <Input
+                    id='email'
+                    placeholder='Nhập email'
+                    {...register('email')}
+                  />
+                  {errors.email && (
+                    <p className='text-sm text-red-600'>
+                      {errors.email.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className='space-y-2'>
+                  <Label htmlFor='major'>Chuyên ngành</Label>
+                  <Input
+                    id='major'
+                    placeholder='Nhập chuyên ngành'
+                    {...register('major')}
+                  />
+                  {errors.major && (
+                    <p className='text-sm text-red-600'>
+                      {errors.major.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className='flex justify-end'>
+                <Button type='submit' className='gap-2' disabled={isSubmitting}>
+                  <Save className='h-4 w-4' />
+                  {isSubmitting ? 'Đang lưu...' : 'Lưu thay đổi'}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
+}

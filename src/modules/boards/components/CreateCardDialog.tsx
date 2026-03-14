@@ -101,7 +101,7 @@ export default function CreateCardDialog({ trigger }: CreateCardDialogProps) {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className='sm:max-w-[525px]'>
+      <DialogContent className='sm:max-w-131.25'>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Create New Card</DialogTitle>

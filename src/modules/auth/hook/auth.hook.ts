@@ -12,12 +12,30 @@ import {
 export const useLogin = () => {
   return useMutation({
     mutationFn: (payload: LoginFormType) => login(payload),
-    onSuccess: data => {
-      console.log('Login successful!', data)
+    // Dùng 'any' để TypeScript thôi không càm ràm sai kiểu dữ liệu nữa
+    onSuccess: (response: any) => {
+      console.log('Login successful!', response)
+
+      // LẤY TRỰC TIẾP TỪ RESPONSE, KHÔNG CÓ .DATA
+      const token = response.accessToken
+      const refreshToken = response.refreshToken
+
+      if (token) {
+        // Cất vào ví (Local Storage)
+        localStorage.setItem('accessToken', token)
+
+        if (refreshToken) {
+          localStorage.setItem('refreshToken', refreshToken)
+        }
+
+        console.log('🎉 LƯU TOKEN THÀNH CÔNG RỒI NHÉ!')
+
+        // F5 tự động chuyển về trang chủ để Header cập nhật tên luôn
+        window.location.href = '/'
+      }
     },
     onError: error => {
       console.error('Login failed:', error)
-      console.log('Error details:', error.message)
     }
   })
 }

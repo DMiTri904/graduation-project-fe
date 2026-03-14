@@ -1,8 +1,6 @@
-import { Search, Bell, Moon, HelpCircle } from 'lucide-react'
-import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useNavigate, useLocation } from 'react-router-dom'
+import Header from '@/components/Header'
 
 const NAV_ITEMS = [
   { label: 'Dashboard', path: '/' },
@@ -42,7 +40,8 @@ export default function MainLayout({
               const isActive =
                 item.path === '/'
                   ? pathname === '/'
-                  : pathname === item.path || pathname.startsWith(`${item.path}/`)
+                  : pathname === item.path ||
+                    pathname.startsWith(`${item.path}/`)
 
               return (
                 <Button
@@ -76,59 +75,7 @@ export default function MainLayout({
 
       {/* 2. MAIN CONTENT (Bên phải) */}
       <main className='flex-1 flex flex-col min-w-0'>
-        {/* APPBAR (Thanh điều hướng trên) */}
-        <header className='h-18 border-b border-slate-200 flex items-center justify-between px-6 shrink-0'>
-          {/* Search */}
-          <div className='w-96 relative'>
-            <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-slate-400' />
-            <Input
-              type='text'
-              placeholder='Search tasks, groups, or files...'
-              className='pl-9 bg-slate-50 border-none'
-            />
-          </div>
-
-          {/* Right Icons & Profile */}
-          <div className='flex items-center gap-4'>
-            <Button
-              variant='ghost'
-              size='icon'
-              className='text-slate-500 rounded-full'
-            >
-              <Moon className='h-5 w-5' />
-            </Button>
-            <Button
-              variant='ghost'
-              size='icon'
-              className='text-slate-500 rounded-full'
-            >
-              <Bell className='h-5 w-5' />
-            </Button>
-            <Button
-              variant='ghost'
-              size='icon'
-              className='text-slate-500 rounded-full'
-            >
-              <HelpCircle className='h-5 w-5' />
-            </Button>
-            <div className='h-8 w-px bg-slate-200 mx-2'></div>{' '}
-            {/* Dọc phân cách */}
-            <div className='flex items-center gap-3 text-right'>
-              <div>
-                <p className='text-sm font-semibold leading-none'>
-                  Phan Minh Tri
-                </p>
-                <p className='text-xs text-slate-500 mt-1'>
-                  Student ID: 63135432
-                </p>
-              </div>
-              <Avatar>
-                <AvatarImage src='https://github.com/shadcn.png' />
-                <AvatarFallback>MT</AvatarFallback>
-              </Avatar>
-            </div>
-          </div>
-        </header>
+        <Header />
 
         {/* 3. BOARD AREA (Nơi chứa Bảng kéo thả) */}
         <div className='flex-1 overflow-x-hidden'>{children}</div>
