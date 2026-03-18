@@ -2,11 +2,19 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   getGroups,
   getGroupById,
-  createGroup,
   joinGroup,
-  deleteGroup
+  deleteGroup,
+  createGroupAPI,
+  addMemberToGroupAPI,
+  getGroupDetailAPI,
+  getGroupMembersAPI
 } from '../api/group.api'
 import type { CreateGroupPayload, JoinGroupPayload } from '../types/group'
+import type {
+  AddMemberRequest,
+  CreateGroupRequest
+} from '../types/group.request'
+import { toast } from 'sonner'
 
 /**
  * Query Keys
@@ -30,6 +38,17 @@ export const useGetGroups = () => {
   })
 }
 
+export const useGetGroupDetail = (groupId: number) => {
+  return useQuery({
+    // Ép kiểu groupId sang string để dùng chung bộ key groupKeys.detail() của bạn
+    queryKey: groupKeys.detail(groupId.toString()),
+    queryFn: () => getGroupDetailAPI(groupId),
+    // Chỉ gọi API khi groupId là 1 số hợp lệ (lớn hơn 0)
+    enabled: typeof groupId === 'number' && groupId > 0
+    // staleTime: 1000 * 60 * 5 // Cache 5 phút cho đỡ gọi lại nhiều
+  })
+}
+
 /**
  * Hook: Get group by ID
  */
@@ -48,13 +67,18 @@ export const useCreateGroup = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (payload: CreateGroupPayload) => createGroup(payload),
-    onSuccess: () => {
-      // Invalidate and refetch groups list
-      queryClient.invalidateQueries({ queryKey: groupKeys.lists() })
+    mutationFn: (body: CreateGroupRequest) => createGroupAPI(body),
+    onSuccess: response => {
+      toast.success('Thành công', {
+        description: 'Tạo nhóm thành công!'
+      })
+      // Báo cho React Query biết là dữ liệu nhóm đã cũ, cần tải lại danh sách mới
+      queryClient.invalidateQueries({ queryKey: ['groups'] })
     },
-    onError: error => {
-      console.error('Create group failed:', error)
+    onError: (error: any) => {
+      toast.error('Thất bại', {
+        description: error?.response?.data?.message || 'Có lỗi khi tạo nhóm.'
+      })
     }
   })
 }
@@ -88,5 +112,45 @@ export const useDeleteGroup = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: groupKeys.lists() })
     }
+  })
+}
+
+/**
+ * Hook: Add member to group
+ */
+export const useAddMember = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      groupId,
+      body
+    }: {
+      groupId: number
+      body: AddMemberRequest
+    }) => addMemberToGroupAPI(groupId, body),
+    onSuccess: () => {
+      toast.success('Thành công', {
+        description: 'Đã thêm thành viên vào nhóm.'
+      })
+
+      queryClient.invalidateQueries({ queryKey: ['groups'] })
+    },
+    onError: (error: any) => {
+      toast.error('Thất bại', {
+        description:
+          error?.response?.data?.message ||
+          'Không thể thêm thành viên. Vui lòng thử lại.'
+      })
+    }
+  })
+}
+
+export const useGetGroupMembers = (groupId: number) => {
+  return useQuery({
+    // Tạo một key mới để react-query quản lý riêng data này
+    queryKey: [...groupKeys.detail(groupId.toString()), 'members'],
+    queryFn: () => getGroupMembersAPI(groupId),
+    enabled: typeof groupId === 'number' && groupId > 0
   })
 }

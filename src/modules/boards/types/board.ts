@@ -35,3 +35,11 @@ export interface Board {
   columnOrderIds: string[]
   columns: Column[]
 }
+
+export interface GroupMember {
+  userId: number
+  userName: string
+  avatarUrl: string
+  role: string
+  joinedAt: string
+}

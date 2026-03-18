@@ -2,7 +2,6 @@ import { GroupMemberRole } from './group.enum'
 
 export interface CreateGroupRequest {
   name: string
-  description?: string
   subjectOrProjectName: string
 }
 
@@ -13,8 +12,14 @@ export interface UpdateGroupRequest {
 }
 
 export interface AddMemberRequest {
-  userId: number
+  userId?: number
   role?: GroupMemberRole
+  userName?: string
+  email?: string
+  avatarUrl?: string
+  userCode?: string
+  isActive?: boolean
+  userRole?: string
 }
 
 export interface UpdateMemberRoleRequest {
