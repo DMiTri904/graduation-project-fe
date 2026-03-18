@@ -1,9 +1,31 @@
+import api from '@/lib/axios'
 import type {
   Group,
   CreateGroupPayload,
   JoinGroupPayload
 } from '../types/group'
 import { MOCK_GROUPS } from '../types/group'
+import type {
+  AddMemberRequest,
+  CreateGroupRequest
+} from '../types/group.request'
+
+interface GroupListItemDto {
+  id: number
+  name: string
+  subjectOrProjectName: string
+  isActive: boolean
+}
+
+interface GroupListResponseDto {
+  value: GroupListItemDto[]
+  isSuccess: boolean
+  isFailure: boolean
+  error?: {
+    code: string
+    message: string
+  }
+}
 
 /**
  * Simulate API delay
@@ -34,8 +56,21 @@ const saveGroups = (groups: Group[]) => {
  * Get all groups (Mock API)
  */
 export const getGroups = async (): Promise<Group[]> => {
-  await delay(800) // Simulate network delay
-  return getStoredGroups()
+  const response = await api.get<GroupListResponseDto>('/group')
+  const payload = response.data
+
+  if (!payload?.isSuccess) {
+    throw new Error(payload?.error?.message || 'Không thể tải danh sách nhóm')
+  }
+
+  return (payload.value || []).map(item => ({
+    id: String(item.id),
+    name: item.name,
+    category: item.subjectOrProjectName || 'General',
+    memberCount: 0,
+    maxMembers: 5,
+    progress: item.isActive ? 100 : 0
+  }))
 }
 
 /**
@@ -47,38 +82,33 @@ export const getGroupById = async (id: string): Promise<Group | null> => {
   return groups.find(g => g.id === id) || null
 }
 
-/**
- * Create new group (Mock API)
- */
-export const createGroup = async (
-  payload: CreateGroupPayload
-): Promise<Group> => {
-  await delay(1000)
-
-  const groups = getStoredGroups()
-
-  // Generate random invite code
-  const inviteCode =
-    payload.name.substring(0, 3).toUpperCase() +
-    Math.random().toString(36).substring(2, 6).toUpperCase()
-
-  const newGroup: Group = {
-    id: `group-${Date.now()}`,
-    name: payload.name,
-    category: payload.category,
-    memberCount: 1, // Creator is the first member
-    maxMembers: payload.maxMembers || 5,
-    progress: 0,
-    inviteCode,
-    createdAt: new Date().toISOString()
-  }
-
-  groups.push(newGroup)
-  saveGroups(groups)
-
-  return newGroup
+export const createGroupAPI = async (body: CreateGroupRequest) => {
+  // Thay url '/api/group' bằng đúng endpoint trên Swagger của bạn
+  const response = await api.post('/group', body)
+  return response.data
 }
 
+/**
+ * Add member to group
+ * Endpoint: POST /api/group/{groupId}/member
+ */
+export const addMemberToGroupAPI = async (
+  groupId: number,
+  body: AddMemberRequest
+) => {
+  const response = await api.post(`/group/${groupId}/member`, body)
+  return response.data
+}
+
+export const getGroupDetailAPI = async (groupId: number) => {
+  const response = await api.get(`/group/${groupId}/detail`)
+  return response.data
+}
+
+export const getGroupMembersAPI = async (groupId: number) => {
+  const response = await api.get(`/group/${groupId}/members`)
+  return response.data
+}
 /**
  * Join group by invite code (Mock API)
  */

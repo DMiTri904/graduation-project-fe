@@ -16,6 +16,27 @@ export const useUserProfile = () => {
   })
 }
 
+// export const useGetUsersByEmail = (
+//   email: string,
+//   startTime?: string,
+//   endTime?: string
+// ) => {
+//   return useQuery({
+//     queryKey: [
+//       'users',
+//       {
+//         email,
+//         startTime,
+//         endTime
+//       }
+//     ],
+//     queryFn: () => getUsersByEmail(email, startTime, endTime),
+//     enabled: !!startTime && !!endTime,
+//     staleTime: 0,
+//     cacheTime: 0
+//   })
+// }
+
 export const useChangePassword = () => {
   return useMutation({
     mutationFn: (payload: ChangePasswordPayload) => changePasswordAPI(payload),

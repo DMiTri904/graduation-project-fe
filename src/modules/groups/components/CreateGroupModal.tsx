@@ -53,28 +53,25 @@ export default function CreateGroupModal({
   }
 
   const onSubmit = (data: CreateGroupFormData) => {
-    createGroup(
-      {
-        name: data.name,
-        category: data.category,
-        maxMembers: data.maxMembers
+    const payload = {
+      name: data.name,
+      subjectOrProjectName: data.category
+    }
+
+    createGroup(payload, {
+      onSuccess: response => {
+        console.log('Group created:', response)
+        handleClose()
+        onSuccess?.()
       },
-      {
-        onSuccess: newGroup => {
-          console.log('Group created:', newGroup)
-          handleClose()
-          onSuccess?.()
-          // Show success message
-          alert(
-            `Nhóm "${newGroup.name}" đã được tạo thành công!\nMã tham gia: ${newGroup.inviteCode}`
-          )
-        },
-        onError: error => {
-          console.error('Create group error:', error)
-          alert('Có lỗi xảy ra khi tạo nhóm. Vui lòng thử lại.')
-        }
+      onError: (error: any) => {
+        console.error('Create group error:', error)
+        alert(
+          error?.response?.data?.message ||
+            'Có lỗi xảy ra khi tạo nhóm. Vui lòng thử lại.'
+        )
       }
-    )
+    })
   }
 
   if (!isOpen) return null
@@ -103,7 +100,7 @@ export default function CreateGroupModal({
 
         {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
-          {/* Group Name */}
+          {/* Tên nhóm */}
           <div className='space-y-2'>
             <Label htmlFor='name'>
               Tên nhóm <span className='text-red-500'>*</span>
@@ -120,7 +117,7 @@ export default function CreateGroupModal({
             )}
           </div>
 
-          {/* Category */}
+          {/* Danh mục */}
           <div className='space-y-2'>
             <Label htmlFor='category'>
               Danh mục <span className='text-red-500'>*</span>
@@ -129,7 +126,7 @@ export default function CreateGroupModal({
               value={selectedCategory}
               onValueChange={value => {
                 setSelectedCategory(value)
-                setValue('category', value)
+                setValue('category', value, { shouldValidate: true })
               }}
               disabled={isPending}
             >
@@ -151,7 +148,7 @@ export default function CreateGroupModal({
             )}
           </div>
 
-          {/* Max Members */}
+          {/* Max Members - Giữ nguyên giao diện */}
           <div className='space-y-2'>
             <Label htmlFor='maxMembers'>Số thành viên tối đa</Label>
             <Input

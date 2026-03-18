@@ -28,6 +28,17 @@ export interface ChangeAvatarPayload {
   file: File
 }
 
+export interface SearchUserResponse {
+  id: number
+  fullName: string
+  email: string
+  avatarUrl?: string
+  userCode?: string
+  isActive?: boolean
+  userRole?: string
+  userName?: string
+}
+
 const normalizeApiResponse = <T>(raw: any): ApiResponse<T> => {
   const isWrapped =
     raw &&
@@ -77,4 +88,39 @@ export const changeAvatarAPI = async (
   })
 
   return normalizeApiResponse<UserProfileResponse>(data)
+}
+
+export const searchUsersAPI = async (
+  keyword: string
+): Promise<SearchUserResponse[]> => {
+  const { data } = await api.get('/user/search', {
+    params: {
+      keyword
+    }
+  })
+
+  const payload = normalizeApiResponse<any>(data)
+
+  const rawList = Array.isArray(data)
+    ? data
+    : Array.isArray(payload?.data)
+      ? payload.data
+      : Array.isArray(data?.value)
+        ? data.value
+        : []
+
+  return rawList
+    .map(
+      (item: any): SearchUserResponse => ({
+        id: Number(item?.id ?? 0),
+        fullName: item?.fullName || item?.name || item?.userName || '',
+        email: item?.email || '',
+        avatarUrl: item?.avatarUrl || item?.avatar || '',
+        userCode: item?.userCode || item?.studentId || item?.mssv || '',
+        isActive: item?.isActive ?? true,
+        userRole: item?.userRole || item?.role || 'Student',
+        userName: item?.userName || item?.name || item?.fullName || ''
+      })
+    )
+    .filter(user => user.id > 0 && !!user.email)
 }
