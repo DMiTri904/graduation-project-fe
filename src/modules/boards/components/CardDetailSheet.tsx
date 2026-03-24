@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { useBoardStore } from '../stores/useBoardStore'
 import type { Card } from '../types/board'
-import { useDeleteTask, useUpdateTask } from '../hooks/useBoardTasks'
+import { useDeleteTask, useUpdateTask } from '../hooks/useBoardHooks'
 import { getPriorityConfig, PRIORITY_OPTIONS } from '~/utils/priority'
 import { toast } from 'sonner'
 import { formatDueDateForSubmit } from '@/utils/boardFormatters'

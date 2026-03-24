@@ -20,9 +20,11 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
-import { useCreateGroupTask } from '../hooks/useBoardTasks'
+import {
+  useCreateGroupTask,
+  useGetGroupMemberOptions
+} from '../hooks/useBoardHooks'
 import { toast } from 'sonner'
-import { useGetGroupMemberOptions } from '../hooks/useBoardTasks'
 import { formatDueDateForSubmit } from '@/utils/boardFormatters'
 
 interface CreateCardDialogProps {

@@ -1,13 +1,26 @@
 import api from '@/lib/axios'
 
+// export interface NotificationDto {
+//   id: number
+//   content: string
+//   isRead: boolean
+//   createdAt: string
+//   type?: 'TASK_ASSIGN' | 'GROUP_INVITE' | 'COMMENT' | string
+//   groupId?: number | string | null
+//   taskId?: number | string | null
+//   title?: string
+//   link?: string
+// }
+
 export interface NotificationDto {
   id: number
   content: string
   isRead: boolean
   createdAt: string
-  title?: string
-  type?: string
-  link?: string
+  groupId?: number | string | null
+  // Thêm 2 trường này theo đúng chuẩn API của bạn:
+  relatedEntityId?: number | string | null
+  relatedEntityType?: 'Task' | 'Group' | string
 }
 
 interface NotificationListResponse {
