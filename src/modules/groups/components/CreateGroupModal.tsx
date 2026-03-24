@@ -55,7 +55,8 @@ export default function CreateGroupModal({
   const onSubmit = (data: CreateGroupFormData) => {
     const payload = {
       name: data.name,
-      subjectOrProjectName: data.category
+      subjectOrProjectName: data.category,
+      limitedUser: data.maxMembers
     }
 
     createGroup(payload, {

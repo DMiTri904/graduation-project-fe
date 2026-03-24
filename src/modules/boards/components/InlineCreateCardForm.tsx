@@ -3,8 +3,31 @@ import type { KeyboardEvent } from 'react'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { CheckSquare, Calendar, User, CornerDownLeft, X } from 'lucide-react'
-import { useBoardStore } from '../stores/useBoardStore'
-import { createCardAPI } from '../api/board.api'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger
+} from '@/components/ui/popover'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList
+} from '@/components/ui/command'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import {
+  useCreateGroupTask,
+  useGetGroupMemberOptions
+} from '../hooks/useBoardTasks'
+import { toast } from 'sonner'
+import {
+  getAvatarColorClass,
+  getAvatarFallback,
+  getAvatarSrc
+} from '@/lib/avatar'
+import { formatDueDateForSubmit } from '@/utils/boardFormatters'
 
 interface InlineCreateCardFormProps {
   columnId: string
@@ -17,12 +40,39 @@ export default function InlineCreateCardForm({
   boardId,
   onCancel
 }: InlineCreateCardFormProps) {
+  const groupId = Number((boardId || '').replace(/\D/g, ''))
   const [title, setTitle] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const [dueDate, setDueDate] = useState('')
+  const [assignedTo, setAssignedTo] = useState<number | undefined>(undefined)
+  const [isAssigneePopoverOpen, setIsAssigneePopoverOpen] = useState(false)
+  const [assigneeKeyword, setAssigneeKeyword] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const dueDateInputRef = useRef<HTMLInputElement>(null)
   const formRef = useRef<HTMLDivElement>(null)
+  const { mutateAsync: createTaskMutateAsync, isPending } =
+    useCreateGroupTask(groupId)
+  const { data: members = [] } = useGetGroupMemberOptions(groupId)
 
-  const { addCard } = useBoardStore()
+  const filteredMembers = members.filter(member => {
+    const keyword = assigneeKeyword.trim().toLowerCase()
+    if (!keyword) return true
+    return (
+      member.userName?.toLowerCase().includes(keyword) ||
+      member.email?.toLowerCase().includes(keyword)
+    )
+  })
+
+  const hasAssignedUser = Number.isFinite(assignedTo)
+  const selectedAssignee = hasAssignedUser
+    ? members.find(member => member.userId === assignedTo)
+    : undefined
+
+  const formattedDueDate = dueDate
+    ? new Date(`${dueDate}T00:00:00`).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric'
+      })
+    : ''
 
   // Auto-focus on mount
   useEffect(() => {
@@ -32,8 +82,15 @@ export default function InlineCreateCardForm({
   // Click outside to close
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      const clickedInsidePopover = Boolean(
+        target.closest('[data-radix-popper-content-wrapper]')
+      )
+
+      if (clickedInsidePopover) return
+
       if (formRef.current && !formRef.current.contains(event.target as Node)) {
-        if (!isLoading) {
+        if (!isPending) {
           onCancel()
         }
       }
@@ -41,21 +98,28 @@ export default function InlineCreateCardForm({
 
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [isLoading, onCancel])
+  }, [isPending, onCancel])
 
   const handleSubmit = async () => {
-    if (!title.trim() || isLoading) return
+    if (!title.trim() || isPending || groupId <= 0) return
 
-    setIsLoading(true)
     try {
-      const newCard = await createCardAPI(columnId, title.trim(), boardId)
-      addCard(columnId, newCard)
-      setTitle('')
-      textareaRef.current?.focus()
+      const formattedDueDate = formatDueDateForSubmit(dueDate)
+
+      await createTaskMutateAsync({
+        title: title.trim(),
+        description: '',
+        taskStatus: 'ToDo' as const,
+        priority: 'Medium' as const,
+        dueDate: formattedDueDate,
+        assignedTo: assignedTo ?? 0
+      })
+
+      onCancel()
     } catch (error) {
-      console.error('Failed to create card:', error)
-    } finally {
-      setIsLoading(false)
+      toast.error('Không thể tạo task', {
+        description: 'Vui lòng thử lại sau.'
+      })
     }
   }
 
@@ -65,8 +129,30 @@ export default function InlineCreateCardForm({
       handleSubmit()
     }
     if (e.key === 'Escape') {
+      if (isAssigneePopoverOpen) {
+        setIsAssigneePopoverOpen(false)
+        return
+      }
       onCancel()
     }
+  }
+
+  const handleOpenDatePicker = () => {
+    if (isPending) return
+
+    const input = dueDateInputRef.current
+    if (!input) return
+
+    textareaRef.current?.blur()
+    input.focus({ preventScroll: true })
+
+    if (typeof input.showPicker === 'function') {
+      input.showPicker()
+      return
+    }
+
+    input.focus()
+    input.click()
   }
 
   return (
@@ -80,7 +166,7 @@ export default function InlineCreateCardForm({
           onChange={e => setTitle(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder='What needs to be done?'
-          disabled={isLoading}
+          disabled={isPending}
           rows={2}
           className='border-none focus-visible:ring-0 focus-visible:ring-offset-0 resize-none text-sm'
         />
@@ -93,43 +179,163 @@ export default function InlineCreateCardForm({
               variant='ghost'
               size='icon'
               className='h-7 w-7 text-slate-500 hover:text-slate-700'
-              disabled={isLoading}
+              disabled={isPending}
             >
               <CheckSquare className='h-4 w-4' />
             </Button>
             <Button
+              type='button'
               variant='ghost'
-              size='icon'
-              className='h-7 w-7 text-slate-500 hover:text-slate-700'
-              disabled={isLoading}
+              className='h-7 px-2 text-slate-500 hover:text-slate-700 gap-1.5'
+              disabled={isPending}
+              onClick={handleOpenDatePicker}
+              title={dueDate ? `Due date: ${dueDate}` : 'Set due date'}
             >
               <Calendar className='h-4 w-4' />
+              {formattedDueDate && (
+                <span className='text-xs font-medium'>{formattedDueDate}</span>
+              )}
             </Button>
-            <Button
-              variant='ghost'
-              size='icon'
-              className='h-7 w-7 text-slate-500 hover:text-slate-700'
-              disabled={isLoading}
+
+            <input
+              ref={dueDateInputRef}
+              type='date'
+              value={dueDate}
+              onChange={event => {
+                setDueDate(event.target.value)
+                textareaRef.current?.focus()
+              }}
+              onKeyDown={event => {
+                event.stopPropagation()
+              }}
+              className='absolute h-0 w-0 opacity-0 pointer-events-none'
+              tabIndex={-1}
+              aria-hidden='true'
+            />
+
+            {dueDate && (
+              <Button
+                type='button'
+                variant='ghost'
+                size='icon'
+                className='h-7 w-7 text-slate-500 hover:text-slate-700'
+                onClick={() => setDueDate('')}
+                title='Clear due date'
+                disabled={isPending}
+              >
+                <X className='h-3.5 w-3.5' />
+              </Button>
+            )}
+
+            <Popover
+              open={isAssigneePopoverOpen}
+              onOpenChange={setIsAssigneePopoverOpen}
             >
-              <User className='h-4 w-4' />
-            </Button>
+              <PopoverTrigger asChild>
+                <Button
+                  type='button'
+                  variant='ghost'
+                  size='icon'
+                  className='h-7 w-7 text-slate-500 hover:text-slate-700'
+                  disabled={isPending}
+                  title={
+                    selectedAssignee
+                      ? `Assignee: ${selectedAssignee.userName}`
+                      : 'Assign task'
+                  }
+                >
+                  {selectedAssignee ? (
+                    <Avatar className='h-5.5 w-5.5'>
+                      <AvatarImage
+                        src={getAvatarSrc(selectedAssignee.avatarUrl)}
+                        alt={selectedAssignee.userName}
+                      />
+                      <AvatarFallback
+                        className={`${getAvatarColorClass(selectedAssignee.userName)} text-[9px] text-white font-medium`}
+                      >
+                        {getAvatarFallback(selectedAssignee.userName)}
+                      </AvatarFallback>
+                    </Avatar>
+                  ) : (
+                    <User className='h-4 w-4' />
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                className='w-72 p-0'
+                align='start'
+                onOpenAutoFocus={event => event.preventDefault()}
+              >
+                <Command>
+                  <CommandInput
+                    placeholder='Tìm thành viên...'
+                    value={assigneeKeyword}
+                    onValueChange={setAssigneeKeyword}
+                  />
+                  <CommandList>
+                    <CommandEmpty>Không có thành viên phù hợp.</CommandEmpty>
+                    <CommandGroup>
+                      {filteredMembers.map(member => (
+                        <CommandItem
+                          key={member.userId}
+                          value={`${member.userName}-${member.email || ''}`}
+                          onSelect={() => {
+                            setAssignedTo(member.userId)
+                            setAssigneeKeyword('')
+                            setIsAssigneePopoverOpen(false)
+                          }}
+                          className='gap-2 py-2'
+                        >
+                          <Avatar className='h-7 w-7'>
+                            <AvatarImage
+                              src={getAvatarSrc(member.avatarUrl)}
+                              alt={member.userName}
+                            />
+                            <AvatarFallback
+                              className={`${getAvatarColorClass(member.userName)} text-[10px] text-white font-medium`}
+                            >
+                              {getAvatarFallback(member.userName)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className='min-w-0'>
+                            <p className='truncate text-sm font-medium'>
+                              {member.userName}
+                            </p>
+                            {member.email && (
+                              <p className='truncate text-xs text-slate-500'>
+                                {member.email}
+                              </p>
+                            )}
+                          </div>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+
+            {selectedAssignee && (
+              <Button
+                type='button'
+                variant='ghost'
+                size='icon'
+                className='h-7 w-7 text-slate-500 hover:text-slate-700'
+                onClick={() => setAssignedTo(undefined)}
+                title='Clear assignee'
+                disabled={isPending}
+              >
+                <X className='h-3.5 w-3.5' />
+              </Button>
+            )}
           </div>
 
           {/* Right Side - Submit & Cancel */}
-          <div className='flex items-center gap-1'>
-            <Button
-              variant='ghost'
-              size='icon'
-              onClick={onCancel}
-              disabled={isLoading}
-              className='h-7 w-7 text-slate-500 hover:text-slate-700'
-            >
-              <X className='h-4 w-4' />
-            </Button>
+          <div className='flex items-center'>
             <Button
               size='icon'
               onClick={handleSubmit}
-              disabled={!title.trim() || isLoading}
+              disabled={!title.trim() || isPending || groupId <= 0}
               className='h-7 w-7 bg-blue-600 hover:bg-blue-700'
             >
               <CornerDownLeft className='h-4 w-4' />

@@ -20,61 +20,68 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
-import { useBoardStore } from '../stores/useBoardStore'
-import { createDetailedCardAPI } from '../api/board.api'
+import { useCreateGroupTask } from '../hooks/useBoardTasks'
+import { toast } from 'sonner'
+import { useGetGroupMemberOptions } from '../hooks/useBoardTasks'
+import { formatDueDateForSubmit } from '@/utils/boardFormatters'
 
 interface CreateCardDialogProps {
   trigger?: React.ReactNode
+  groupId: number
 }
 
-export default function CreateCardDialog({ trigger }: CreateCardDialogProps) {
-  const { board, addCard } = useBoardStore()
+const mapPriorityToApi = (
+  value: 'low' | 'medium' | 'high'
+): 'Low' | 'Medium' | 'High' => {
+  if (value === 'high') return 'High'
+  if (value === 'low') return 'Low'
+  return 'Medium'
+}
+
+export default function CreateCardDialog({
+  trigger,
+  groupId
+}: CreateCardDialogProps) {
   const [open, setOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
+  const { mutateAsync: createTaskMutateAsync, isPending } =
+    useCreateGroupTask(groupId)
+  const { data: members = [] } = useGetGroupMemberOptions(groupId)
 
   // Form state
-  const [selectedColumnId, setSelectedColumnId] = useState<string>('')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [priority, setPriority] = useState<
-    'low' | 'medium' | 'high' | 'urgent'
-  >('medium')
-  const [assignee, setAssignee] = useState('')
+  const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium')
   const [dueDate, setDueDate] = useState('')
-
-  if (!board) return null
+  const [assignedTo, setAssignedTo] = useState<string>('0')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!title.trim() || !selectedColumnId) return
+    if (!title.trim() || groupId <= 0 || isPending) return
 
-    setIsLoading(true)
     try {
-      const newCard = await createDetailedCardAPI(board._id, selectedColumnId, {
-        title: title.trim(),
-        description: description.trim() || null,
-        priority,
-        assignee: assignee.trim() || undefined,
-        dueDate: dueDate || undefined,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      })
+      const dueDateIso = formatDueDateForSubmit(dueDate)
 
-      addCard(selectedColumnId, newCard)
+      await createTaskMutateAsync({
+        title: title.trim(),
+        description: description.trim() || undefined,
+        priority: mapPriorityToApi(priority),
+        taskStatus: 'ToDo',
+        dueDate: dueDateIso,
+        assignedTo: Number(assignedTo)
+      })
 
       // Reset form
       setTitle('')
       setDescription('')
       setPriority('medium')
-      setAssignee('')
       setDueDate('')
-      setSelectedColumnId('')
+      setAssignedTo('0')
       setOpen(false)
     } catch (error) {
-      console.error('Failed to create card:', error)
-    } finally {
-      setIsLoading(false)
+      toast.error('Không thể tạo task', {
+        description: 'Vui lòng thử lại sau.'
+      })
     }
   }
 
@@ -85,9 +92,8 @@ export default function CreateCardDialog({ trigger }: CreateCardDialogProps) {
       setTitle('')
       setDescription('')
       setPriority('medium')
-      setAssignee('')
       setDueDate('')
-      setSelectedColumnId('')
+      setAssignedTo('0')
     }
   }
 
@@ -106,33 +112,11 @@ export default function CreateCardDialog({ trigger }: CreateCardDialogProps) {
           <DialogHeader>
             <DialogTitle>Create New Card</DialogTitle>
             <DialogDescription>
-              Add a new card to your board. Choose a column and fill in the
-              details.
+              Add a new card to your board and fill in the details.
             </DialogDescription>
           </DialogHeader>
 
           <div className='grid gap-4 py-4'>
-            {/* Column Select */}
-            <div className='grid gap-2'>
-              <Label htmlFor='column'>Column *</Label>
-              <Select
-                value={selectedColumnId}
-                onValueChange={setSelectedColumnId}
-                disabled={isLoading}
-              >
-                <SelectTrigger id='column'>
-                  <SelectValue placeholder='Select a column' />
-                </SelectTrigger>
-                <SelectContent>
-                  {board.columns.map(column => (
-                    <SelectItem key={column._id} value={column._id}>
-                      {column.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
             {/* Title Input */}
             <div className='grid gap-2'>
               <Label htmlFor='title'>Title *</Label>
@@ -141,7 +125,7 @@ export default function CreateCardDialog({ trigger }: CreateCardDialogProps) {
                 placeholder='Enter card title...'
                 value={title}
                 onChange={e => setTitle(e.target.value)}
-                disabled={isLoading}
+                disabled={isPending}
                 required
               />
             </div>
@@ -154,7 +138,7 @@ export default function CreateCardDialog({ trigger }: CreateCardDialogProps) {
                 placeholder='Add a more detailed description...'
                 value={description}
                 onChange={e => setDescription(e.target.value)}
-                disabled={isLoading}
+                disabled={isPending}
                 rows={4}
               />
             </div>
@@ -165,9 +149,9 @@ export default function CreateCardDialog({ trigger }: CreateCardDialogProps) {
               <Select
                 value={priority}
                 onValueChange={(value: string) =>
-                  setPriority(value as 'low' | 'medium' | 'high' | 'urgent')
+                  setPriority(value as 'low' | 'medium' | 'high')
                 }
-                disabled={isLoading}
+                disabled={isPending}
               >
                 <SelectTrigger id='priority'>
                   <SelectValue />
@@ -176,33 +160,45 @@ export default function CreateCardDialog({ trigger }: CreateCardDialogProps) {
                   <SelectItem value='low'>🔽 Low</SelectItem>
                   <SelectItem value='medium'>➖ Medium</SelectItem>
                   <SelectItem value='high'>🔼 High</SelectItem>
-                  <SelectItem value='urgent'>🔴 Urgent</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Assignee Input */}
-            <div className='grid gap-2'>
-              <Label htmlFor='assignee'>Assignee</Label>
-              <Input
-                id='assignee'
-                placeholder='Enter assignee name...'
-                value={assignee}
-                onChange={e => setAssignee(e.target.value)}
-                disabled={isLoading}
-              />
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+              <div className='grid gap-2'>
+                <Label htmlFor='dueDate'>Due date</Label>
+                <Input
+                  id='dueDate'
+                  type='date'
+                  value={dueDate}
+                  onChange={event => setDueDate(event.target.value)}
+                  disabled={isPending}
+                />
+              </div>
             </div>
 
-            {/* Due Date Input */}
             <div className='grid gap-2'>
-              <Label htmlFor='dueDate'>Due Date</Label>
-              <Input
-                id='dueDate'
-                type='date'
-                value={dueDate}
-                onChange={e => setDueDate(e.target.value)}
-                disabled={isLoading}
-              />
+              <Label htmlFor='assignedTo'>Assignee</Label>
+              <Select
+                value={assignedTo}
+                onValueChange={setAssignedTo}
+                disabled={isPending}
+              >
+                <SelectTrigger id='assignedTo'>
+                  <SelectValue placeholder='Select assignee' />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='0'>Unassigned</SelectItem>
+                  {members.map(member => (
+                    <SelectItem
+                      key={member.userId}
+                      value={String(member.userId)}
+                    >
+                      {member.userName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -211,15 +207,12 @@ export default function CreateCardDialog({ trigger }: CreateCardDialogProps) {
               type='button'
               variant='outline'
               onClick={() => setOpen(false)}
-              disabled={isLoading}
+              disabled={isPending}
             >
               Cancel
             </Button>
-            <Button
-              type='submit'
-              disabled={!title.trim() || !selectedColumnId || isLoading}
-            >
-              {isLoading ? 'Creating...' : 'Create Card'}
+            <Button type='submit' disabled={!title.trim() || isPending}>
+              {isPending ? 'Creating...' : 'Create Card'}
             </Button>
           </DialogFooter>
         </form>

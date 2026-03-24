@@ -1,16 +1,20 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-import type { Board, Column, Card } from '../types/board'
+import type { Board, Column, Card, GroupMember } from '../types/board'
 import { mockData } from '~/apis/mock-data'
 
 interface BoardState {
   board: Board | null
   isLoading: boolean
   error: string | null
+  currentGroupMembers: GroupMember[]
+  currentUser: GroupMember | null
 
   // Actions
   initializeBoard: (board: Board) => void
   updateBoard: (updates: Partial<Board>) => void
+  setCurrentGroupMembers: (members: GroupMember[]) => void
+  setCurrentUser: (user: GroupMember | null) => void
 
   // Column actions
   addColumn: (column: Column) => void
@@ -36,6 +40,8 @@ export const useBoardStore = create<BoardState>()(
     board: mockData.board,
     isLoading: false,
     error: null,
+    currentGroupMembers: [],
+    currentUser: null,
 
     initializeBoard: board =>
       set(state => {
@@ -49,6 +55,16 @@ export const useBoardStore = create<BoardState>()(
         if (state.board) {
           Object.assign(state.board, updates)
         }
+      }),
+
+    setCurrentGroupMembers: members =>
+      set(state => {
+        state.currentGroupMembers = members
+      }),
+
+    setCurrentUser: user =>
+      set(state => {
+        state.currentUser = user
       }),
 
     // Column actions

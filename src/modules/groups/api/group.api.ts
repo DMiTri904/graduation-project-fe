@@ -1,10 +1,5 @@
 import api from '@/lib/axios'
-import type {
-  Group,
-  CreateGroupPayload,
-  JoinGroupPayload
-} from '../types/group'
-import { MOCK_GROUPS } from '../types/group'
+import type { Group, JoinGroupPayload } from '../types/group'
 import type {
   AddMemberRequest,
   CreateGroupRequest
@@ -15,6 +10,8 @@ interface GroupListItemDto {
   name: string
   subjectOrProjectName: string
   isActive: boolean
+  limitedUser?: number
+  totalMemberCount?: number
 }
 
 interface GroupListResponseDto {
@@ -27,30 +24,16 @@ interface GroupListResponseDto {
   }
 }
 
-/**
- * Simulate API delay
- */
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
-
-/**
- * Local storage key for groups
- */
-const STORAGE_KEY = 'mock_groups'
-
-/**
- * Get groups from localStorage or use default mock data
- */
-const getStoredGroups = (): Group[] => {
-  const stored = localStorage.getItem(STORAGE_KEY)
-  return stored ? JSON.parse(stored) : MOCK_GROUPS
-}
-
-/**
- * Save groups to localStorage
- */
-const saveGroups = (groups: Group[]) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(groups))
-}
+const mapGroupItemToGroup = (item: GroupListItemDto): Group => ({
+  id: String(item.id),
+  name: item.name,
+  category: item.subjectOrProjectName || 'General',
+  totalMemberCount: item.totalMemberCount ?? 0,
+  limitedUser: item.limitedUser ?? 0,
+  memberCount: item.totalMemberCount ?? 0,
+  maxMembers: item.limitedUser ?? 0,
+  progress: 100
+})
 
 /**
  * Get all groups (Mock API)
@@ -63,23 +46,29 @@ export const getGroups = async (): Promise<Group[]> => {
     throw new Error(payload?.error?.message || 'Không thể tải danh sách nhóm')
   }
 
-  return (payload.value || []).map(item => ({
-    id: String(item.id),
-    name: item.name,
-    category: item.subjectOrProjectName || 'General',
-    memberCount: 0,
-    maxMembers: 5,
-    progress: item.isActive ? 100 : 0
-  }))
+  return (payload.value || []).map(mapGroupItemToGroup)
 }
 
 /**
- * Get group by ID (Mock API)
+ * Get group by ID
  */
 export const getGroupById = async (id: string): Promise<Group | null> => {
-  await delay(500)
-  const groups = getStoredGroups()
-  return groups.find(g => g.id === id) || null
+  const numericId = Number(id)
+  if (!Number.isFinite(numericId) || numericId <= 0) return null
+
+  const response = await api.get(`/group/${numericId}/detail`)
+  const detail = response.data?.value || response.data
+
+  if (!detail) return null
+
+  return mapGroupItemToGroup({
+    id: Number(detail.id ?? numericId),
+    name: detail.name || '',
+    subjectOrProjectName: detail.subjectOrProjectName || 'General',
+    isActive: detail.isActive ?? true,
+    limitedUser: detail.limitedUser,
+    totalMemberCount: detail.totalMemberCount
+  })
 }
 
 export const createGroupAPI = async (body: CreateGroupRequest) => {
@@ -109,38 +98,35 @@ export const getGroupMembersAPI = async (groupId: number) => {
   const response = await api.get(`/group/${groupId}/members`)
   return response.data
 }
+
 /**
- * Join group by invite code (Mock API)
+ * Delete member from group
+ * Endpoint: DELETE /api/group/{groupId}/member/{userId}
+ */
+export const deleteGroupMemberAPI = async (groupId: number, userId: number) => {
+  const response = await api.delete(`/group/${groupId}/member/${userId}`)
+  return response.data
+}
+/**
+ * Join group by invite code
  */
 export const joinGroup = async (payload: JoinGroupPayload): Promise<Group> => {
-  await delay(1000)
+  const response = await api.post('/group/join', payload)
+  const detail = response.data?.value || response.data
 
-  const groups = getStoredGroups()
-  const group = groups.find(g => g.inviteCode === payload.inviteCode)
-
-  if (!group) {
-    throw new Error('Mã tham gia không hợp lệ')
-  }
-
-  if (group.memberCount >= group.maxMembers) {
-    throw new Error('Nhóm đã đầy')
-  }
-
-  // Increment member count
-  group.memberCount += 1
-
-  saveGroups(groups)
-
-  return group
+  return mapGroupItemToGroup({
+    id: Number(detail?.id ?? 0),
+    name: detail?.name || '',
+    subjectOrProjectName: detail?.subjectOrProjectName || 'General',
+    isActive: detail?.isActive ?? true,
+    limitedUser: detail?.limitedUser,
+    totalMemberCount: detail?.totalMemberCount
+  })
 }
 
 /**
- * Delete group (Mock API)
+ * Delete group
  */
 export const deleteGroup = async (id: string): Promise<void> => {
-  await delay(800)
-
-  const groups = getStoredGroups()
-  const filtered = groups.filter(g => g.id !== id)
-  saveGroups(filtered)
+  await api.delete(`/group/${id}`)
 }

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { KeyboardEvent } from 'react'
-import { Sheet, SheetContent, SheetHeader } from '@/components/ui/sheet'
+import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
@@ -24,9 +24,11 @@ import {
   AlertDialogTitle
 } from '@/components/ui/alert-dialog'
 import { useBoardStore } from '../stores/useBoardStore'
-import { updateCardAPI, deleteCardAPI } from '../api/board.api'
 import type { Card } from '../types/board'
+import { useDeleteTask, useUpdateTask } from '../hooks/useBoardTasks'
 import { getPriorityConfig, PRIORITY_OPTIONS } from '~/utils/priority'
+import { toast } from 'sonner'
+import { formatDueDateForSubmit } from '@/utils/boardFormatters'
 import {
   Trash2,
   User,
@@ -45,42 +47,106 @@ interface CardDetailSheetProps {
   onClose: () => void
 }
 
+interface EditTaskFormState {
+  title: string
+  description: string
+  priority: 'low' | 'medium' | 'high'
+  assignee: string
+  dueDate: string
+}
+
 export default function CardDetailSheet({
   card,
   isOpen,
   onClose
 }: CardDetailSheetProps) {
-  const { updateCard, deleteCard, board } = useBoardStore()
+  const { updateCard, deleteCard, board, currentGroupMembers } = useBoardStore()
 
-  // Local state for editing
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [priority, setPriority] = useState<
-    'low' | 'medium' | 'high' | 'urgent'
-  >('medium')
-  const [assignee, setAssignee] = useState('')
-  const [dueDate, setDueDate] = useState('')
+  const taskId = useMemo(() => {
+    const id = Number(String(card?._id || '').replace(/\D/g, ''))
+    return Number.isFinite(id) && id > 0 ? id : 0
+  }, [card?._id])
+
+  const groupId = useMemo(() => {
+    const id = Number(String(card?.boardId || '').replace(/\D/g, ''))
+    return Number.isFinite(id) && id > 0 ? id : 0
+  }, [card?.boardId])
+
+  const { mutateAsync: updateTaskMutateAsync, isPending: isUpdatingTask } =
+    useUpdateTask(groupId)
+  const { mutateAsync: deleteTaskMutateAsync } = useDeleteTask(groupId)
+
+  const [editForm, setEditForm] = useState<EditTaskFormState>({
+    title: '',
+    description: '',
+    priority: 'medium',
+    assignee: 'unassigned',
+    dueDate: ''
+  })
   const [isEditingTitle, setIsEditingTitle] = useState(false)
   const [isEditingDescription, setIsEditingDescription] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
-  // Initialize local state when card changes
-  useEffect(() => {
-    if (card) {
-      setTitle(card.title || '')
-      setDescription(card.description || '')
-      setPriority(card.priority || 'medium')
-      setAssignee(card.assignee || '')
-      setDueDate(card.dueDate || '')
+  const toInputDate = (dateValue?: string) => {
+    if (!dateValue) return ''
+    const parsedDate = new Date(dateValue)
+    if (Number.isNaN(parsedDate.getTime())) {
+      return ''
     }
-  }, [card])
+
+    const year = parsedDate.getFullYear()
+    const month = String(parsedDate.getMonth() + 1).padStart(2, '0')
+    const day = String(parsedDate.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  const mapPriorityToApi = (
+    value: 'low' | 'medium' | 'high'
+  ): 'Low' | 'Medium' | 'High' => {
+    if (value === 'high') return 'High'
+    if (value === 'low') return 'Low'
+    return 'Medium'
+  }
+
+  const mapColumnTitleToTaskStatus = (
+    value?: string
+  ): 'ToDo' | 'InProgress' | 'Test' | 'Done' => {
+    const normalized = (value || '').replace(/\s+/g, '').toLowerCase()
+
+    if (normalized === 'done') return 'Done'
+    if (normalized === 'test' || normalized === 'testing') return 'Test'
+    if (normalized === 'inprogress' || normalized === 'in_progress') {
+      return 'InProgress'
+    }
+
+    return 'ToDo'
+  }
+
+  useEffect(() => {
+    if (!card) return
+
+    const matchedMember = currentGroupMembers.find(
+      member =>
+        member.id === card.assignedTo || member.userId === card.assignedTo
+    )
+
+    setEditForm({
+      title: card.title || '',
+      description: card.description || '',
+      priority: card.priority || 'medium',
+      assignee: matchedMember
+        ? String(matchedMember.id)
+        : typeof card.assignedTo === 'number' && card.assignedTo > 0
+          ? String(card.assignedTo)
+          : 'unassigned',
+      dueDate: toInputDate(card.dueDate)
+    })
+  }, [card, currentGroupMembers])
 
   if (!card || !board) return null
 
-  // Find the column this card belongs to
   const column = board.columns.find(col => col._id === card.columnId)
 
-  // Format date for display
   const formatDate = (dateStr: string | undefined) => {
     if (!dateStr) return 'Not set'
     const date = new Date(dateStr)
@@ -91,91 +157,102 @@ export default function CardDetailSheet({
     })
   }
 
-  // Handle title update
-  const handleTitleBlur = async () => {
+  const handleTitleBlur = () => {
     setIsEditingTitle(false)
-    if (title.trim() !== card.title && title.trim() !== '') {
-      try {
-        await updateCardAPI(card._id, { title: title.trim() })
-        updateCard(card._id, { title: title.trim() })
-      } catch (error) {
-        console.error('Failed to update title:', error)
-        setTitle(card.title || '')
-      }
-    } else {
-      setTitle(card.title || '')
-    }
+    setEditForm(prev => ({
+      ...prev,
+      title: prev.title.trim() || card.title || ''
+    }))
   }
 
-  // Handle Enter key on title
   const handleTitleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault()
       handleTitleBlur()
     }
     if (e.key === 'Escape') {
-      setTitle(card.title || '')
+      setEditForm(prev => ({ ...prev, title: card.title || '' }))
       setIsEditingTitle(false)
     }
   }
 
-  // Handle description update
-  const handleDescriptionBlur = async () => {
+  const handleDescriptionBlur = () => {
     setIsEditingDescription(false)
-    if (description !== card.description) {
-      try {
-        await updateCardAPI(card._id, { description })
-        updateCard(card._id, { description })
-      } catch (error) {
-        console.error('Failed to update description:', error)
-        setDescription(card.description || '')
-      }
-    }
   }
 
-  // Handle priority change
-  const handlePriorityChange = async (newPriority: string) => {
-    const priorityValue = newPriority as 'low' | 'medium' | 'high' | 'urgent'
-    setPriority(priorityValue)
+  const handlePriorityChange = (newPriority: string) => {
+    setEditForm(prev => ({
+      ...prev,
+      priority: newPriority as 'low' | 'medium' | 'high'
+    }))
+  }
+
+  const handleAssigneeChange = (newAssigneeValue: string) => {
+    setEditForm(prev => ({ ...prev, assignee: newAssigneeValue }))
+  }
+
+  const handleDueDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditForm(prev => ({ ...prev, dueDate: e.target.value }))
+  }
+
+  const handleUpdateTask = async () => {
+    if (taskId <= 0 || groupId <= 0) {
+      console.error('Invalid task id/group id for update task API')
+      return
+    }
+
+    const assignedToNumber =
+      editForm.assignee === 'unassigned' ? 0 : Number(editForm.assignee)
+
+    const dueDateIso = formatDueDateForSubmit(editForm.dueDate) ?? null
+
+    const payload = {
+      title: editForm.title.trim() || card.title || '',
+      description: editForm.description || '',
+      priority: mapPriorityToApi(editForm.priority),
+      taskStatus: mapColumnTitleToTaskStatus(column?.title),
+      assignedTo:
+        Number.isFinite(assignedToNumber) && assignedToNumber > 0
+          ? assignedToNumber
+          : 0,
+      dueDate: dueDateIso
+    }
+
     try {
-      await updateCardAPI(card._id, { priority: priorityValue })
-      updateCard(card._id, { priority: priorityValue })
+      await updateTaskMutateAsync({ taskId, body: payload })
+
+      const selectedMember = currentGroupMembers.find(
+        member => String(member.id) === editForm.assignee
+      )
+
+      updateCard(card._id, {
+        title: payload.title,
+        description: payload.description,
+        priority: editForm.priority,
+        assignedTo:
+          editForm.assignee === 'unassigned'
+            ? null
+            : (selectedMember?.userId ??
+              selectedMember?.id ??
+              assignedToNumber),
+        dueDate: payload.dueDate ?? undefined
+      })
+
+      toast.success('Cập nhật công việc thành công')
+      onClose()
     } catch (error) {
-      console.error('Failed to update priority:', error)
+      console.error('Failed to update task:', error)
     }
   }
 
-  // Handle assignee change
-  const handleAssigneeBlur = async () => {
-    if (assignee !== card.assignee) {
-      try {
-        await updateCardAPI(card._id, { assignee })
-        updateCard(card._id, { assignee })
-      } catch (error) {
-        console.error('Failed to update assignee:', error)
-        setAssignee(card.assignee || '')
-      }
-    }
-  }
-
-  // Handle due date change
-  const handleDueDateChange = async (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const newDate = e.target.value
-    setDueDate(newDate)
-    try {
-      await updateCardAPI(card._id, { dueDate: newDate })
-      updateCard(card._id, { dueDate: newDate })
-    } catch (error) {
-      console.error('Failed to update due date:', error)
-    }
-  }
-
-  // Handle delete
   const handleDelete = async () => {
+    if (taskId <= 0 || groupId <= 0) {
+      console.error('Invalid task id/group id for delete task API')
+      return
+    }
+
     try {
-      await deleteCardAPI(card._id)
+      await deleteTaskMutateAsync({ taskId })
       deleteCard(card._id)
       setShowDeleteDialog(false)
       onClose()
@@ -188,14 +265,15 @@ export default function CardDetailSheet({
     <>
       <Sheet open={isOpen} onOpenChange={onClose}>
         <SheetContent className='sm:max-w-3xl overflow-y-auto p-0'>
-          {/* Header */}
           <div className='sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between z-10'>
             <div className='flex items-center gap-3 flex-1'>
               <ListTodo className='h-5 w-5 text-slate-600' />
               {isEditingTitle ? (
                 <Input
-                  value={title}
-                  onChange={e => setTitle(e.target.value)}
+                  value={editForm.title}
+                  onChange={e =>
+                    setEditForm(prev => ({ ...prev, title: e.target.value }))
+                  }
                   onBlur={handleTitleBlur}
                   onKeyDown={handleTitleKeyDown}
                   autoFocus
@@ -206,7 +284,7 @@ export default function CardDetailSheet({
                   onClick={() => setIsEditingTitle(true)}
                   className='text-xl font-semibold cursor-pointer hover:bg-slate-100 rounded px-2 py-1 -ml-2 transition-colors flex-1'
                 >
-                  {card.title || 'Untitled'}
+                  {editForm.title || 'Untitled'}
                 </h2>
               )}
             </div>
@@ -220,12 +298,9 @@ export default function CardDetailSheet({
             </Button>
           </div>
 
-          {/* Main Content */}
           <div className='px-6 py-6'>
             <div className='grid grid-cols-3 gap-6'>
-              {/* Left Column - Main Content */}
               <div className='col-span-2 space-y-6'>
-                {/* Description Section */}
                 <div>
                   <Label className='text-sm font-semibold mb-2 flex items-center gap-2'>
                     <MessageSquare className='h-4 w-4' />
@@ -233,8 +308,13 @@ export default function CardDetailSheet({
                   </Label>
                   {isEditingDescription ? (
                     <Textarea
-                      value={description}
-                      onChange={e => setDescription(e.target.value)}
+                      value={editForm.description}
+                      onChange={e =>
+                        setEditForm(prev => ({
+                          ...prev,
+                          description: e.target.value
+                        }))
+                      }
                       onBlur={handleDescriptionBlur}
                       placeholder='Add a more detailed description...'
                       autoFocus
@@ -246,7 +326,7 @@ export default function CardDetailSheet({
                       onClick={() => setIsEditingDescription(true)}
                       className='min-h-30 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 cursor-pointer hover:bg-slate-100 transition-colors text-sm mt-2 whitespace-pre-wrap'
                     >
-                      {card.description || (
+                      {editForm.description || (
                         <span className='text-slate-400'>
                           Add a more detailed description...
                         </span>
@@ -255,7 +335,6 @@ export default function CardDetailSheet({
                   )}
                 </div>
 
-                {/* Activity Section */}
                 <div>
                   <Label className='text-sm font-semibold mb-3 flex items-center gap-2'>
                     <Clock className='h-4 w-4' />
@@ -288,9 +367,7 @@ export default function CardDetailSheet({
                 </div>
               </div>
 
-              {/* Right Column - Details */}
               <div className='space-y-6'>
-                {/* Status */}
                 <div>
                   <Label className='text-xs font-semibold text-slate-600 uppercase mb-2 block'>
                     Status
@@ -302,18 +379,22 @@ export default function CardDetailSheet({
                   )}
                 </div>
 
-                {/* Priority */}
                 <div>
                   <Label className='text-xs font-semibold text-slate-600 uppercase mb-2 flex items-center gap-1'>
                     <Flag className='h-3 w-3' />
                     Priority
                   </Label>
-                  <Select value={priority} onValueChange={handlePriorityChange}>
+                  <Select
+                    value={editForm.priority}
+                    onValueChange={handlePriorityChange}
+                  >
                     <SelectTrigger className='w-full'>
                       <SelectValue>
                         <div className='flex items-center gap-2'>
-                          {getPriorityConfig(priority).icon}
-                          <span className='capitalize'>{priority}</span>
+                          {getPriorityConfig(editForm.priority).icon}
+                          <span className='capitalize'>
+                            {editForm.priority}
+                          </span>
                         </div>
                       </SelectValue>
                     </SelectTrigger>
@@ -333,22 +414,35 @@ export default function CardDetailSheet({
                   </Select>
                 </div>
 
-                {/* Assignee */}
                 <div>
                   <Label className='text-xs font-semibold text-slate-600 uppercase mb-2 flex items-center gap-1'>
                     <User className='h-3 w-3' />
                     Assignee
                   </Label>
-                  <Input
-                    value={assignee}
-                    onChange={e => setAssignee(e.target.value)}
-                    onBlur={handleAssigneeBlur}
-                    placeholder='Unassigned'
-                    className='text-sm'
-                  />
+                  <Input type='hidden' value={editForm.assignee} readOnly />
+                  <Select
+                    value={editForm.assignee}
+                    onValueChange={handleAssigneeChange}
+                  >
+                    <SelectTrigger className='w-full'>
+                      <SelectValue placeholder='Unassigned' />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value='unassigned'>Unassigned</SelectItem>
+                      {currentGroupMembers.map(member => (
+                        <SelectItem key={member.id} value={String(member.id)}>
+                          <div className='flex items-center gap-2 min-w-0'>
+                            <span className='truncate'>{member.userName}</span>
+                            <span className='text-xs text-slate-500 truncate'>
+                              {member.userCode}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                {/* Reporter */}
                 {card.reporter && (
                   <div>
                     <Label className='text-xs font-semibold text-slate-600 uppercase mb-2 flex items-center gap-1'>
@@ -361,7 +455,6 @@ export default function CardDetailSheet({
                   </div>
                 )}
 
-                {/* Due Date */}
                 <div>
                   <Label className='text-xs font-semibold text-slate-600 uppercase mb-2 flex items-center gap-1'>
                     <Calendar className='h-3 w-3' />
@@ -369,25 +462,34 @@ export default function CardDetailSheet({
                   </Label>
                   <Input
                     type='date'
-                    value={dueDate}
+                    value={editForm.dueDate}
                     onChange={handleDueDateChange}
                     className='text-sm'
                   />
                 </div>
 
-                {/* Actions */}
                 <div className='pt-4 border-t'>
                   <Label className='text-xs font-semibold text-slate-600 uppercase mb-3 block'>
                     Actions
                   </Label>
                   <Button
+                    variant='default'
+                    size='sm'
+                    onClick={handleUpdateTask}
+                    className='w-full justify-start mb-2 bg-blue-600 hover:bg-blue-700'
+                    disabled={isUpdatingTask}
+                  >
+                    {isUpdatingTask ? 'Đang lưu...' : 'Lưu thay đổi'}
+                  </Button>
+                  <Button
                     variant='destructive'
                     size='sm'
                     onClick={() => setShowDeleteDialog(true)}
                     className='w-full justify-start'
+                    disabled={isUpdatingTask}
                   >
                     <Trash2 className='h-4 w-4 mr-2' />
-                    Delete Task
+                    Xóa công việc
                   </Button>
                 </div>
               </div>
@@ -396,23 +498,22 @@ export default function CardDetailSheet({
         </SheetContent>
       </Sheet>
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Task?</AlertDialogTitle>
+            <AlertDialogTitle>Bạn có chắc muốn xóa công việc?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete "{card.title}". This action cannot be
-              undone.
+              Công việc "{card.title}" sẽ bị xóa vĩnh viễn và không thể khôi
+              phục.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className='bg-red-600 hover:bg-red-700'
             >
-              Delete
+              Xóa
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

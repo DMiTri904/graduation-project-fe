@@ -1,6 +1,6 @@
-import { Circle, ChevronUp, ChevronDown, Equal } from 'lucide-react'
+import { ChevronUp, ChevronDown, Equal } from 'lucide-react'
 
-export type PriorityLevel = 'urgent' | 'high' | 'medium' | 'low'
+export type PriorityLevel = 'high' | 'medium' | 'low'
 
 interface PriorityConfig {
   icon: React.ReactNode
@@ -16,15 +16,6 @@ interface PriorityConfig {
  */
 export const getPriorityConfig = (priority?: string): PriorityConfig => {
   switch (priority) {
-    case 'urgent':
-      return {
-        icon: <Circle className='h-3.5 w-3.5 fill-red-500 text-red-500' />,
-        label: 'Urgent',
-        color: 'text-red-500',
-        bgColor: 'bg-red-100',
-        borderColor: 'border-red-200',
-        textColor: 'text-red-700'
-      }
     case 'high':
       return {
         icon: (
@@ -72,7 +63,6 @@ export const getPriorityConfig = (priority?: string): PriorityConfig => {
  * Priority options for dropdown menu
  */
 export const PRIORITY_OPTIONS: { value: PriorityLevel; label: string }[] = [
-  { value: 'urgent', label: 'Urgent' },
   { value: 'high', label: 'High' },
   { value: 'medium', label: 'Medium' },
   { value: 'low', label: 'Low' }

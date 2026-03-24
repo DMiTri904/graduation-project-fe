@@ -1,37 +1,66 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Filter, ArrowUpDown, MoreHorizontal, UserPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu'
 import CreateCardDialog from './CreateCardDialog'
 import type { Board } from '../types/board'
 import AddMemberModal from '@/modules/groups/components/AddMemberModal'
+import ManageMembersModal from '@/modules/groups/components/ManageMembersModal'
 import {
   useAddMember,
   useGetGroupMembers
 } from '@/modules/groups/hooks/useGroups'
 import { GroupMemberRole } from '@/modules/groups/types/group.enum'
+import { useBoardStore } from '../stores/useBoardStore'
+import { getCurrentUserFromToken } from '@/lib/token'
+import {
+  getAvatarColorClass,
+  getAvatarFallback,
+  getAvatarSrc
+} from '@/lib/avatar'
 
 export interface GroupMember {
-  userId: number
+  id: number
+  userId?: number
   userName: string
-  avatarUrl: string
+  userCode: string
+  avatarUrl: string | null
+  isActive: boolean
   role: string
-  joinedAt: string
 }
 
 interface BoardBarProps {
   board?: Board
   groupId?: number
   groupDetail?: any
+  isMyTasksOnly: boolean
+  onMyTasksOnlyChange: (value: boolean) => void
+  onClearFilters: () => void
 }
 
 export default function BoardBar({
   board,
   groupId,
-  groupDetail
+  groupDetail,
+  isMyTasksOnly,
+  onMyTasksOnlyChange,
+  onClearFilters
 }: BoardBarProps) {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
   const { mutateAsync: addMemberMutateAsync } = useAddMember()
+  const setCurrentGroupMembers = useBoardStore(
+    state => state.setCurrentGroupMembers
+  )
+  const tokenUser = getCurrentUserFromToken()
 
   const derivedGroupId = useMemo(() => {
     const value = Number((board?._id || '').replace(/\D/g, ''))
@@ -45,13 +74,62 @@ export default function BoardBar({
   const { data: membersResponse } = useGetGroupMembers(resolvedGroupId)
 
   // 2. TRÍCH XUẤT DATA THẬT VÀ XỬ LÝ HIỂN THỊ
-  const realMembers: GroupMember[] = membersResponse?.value || []
+  const realMembers = useMemo<GroupMember[]>(() => {
+    const rawMembers = Array.isArray(membersResponse?.value)
+      ? membersResponse.value
+      : []
+
+    return rawMembers
+      .map((member: any) => {
+        const rawMemberId = Number(member?.id)
+        const rawUserId = Number(member?.userId ?? member?.id)
+
+        const memberId =
+          Number.isFinite(rawMemberId) && rawMemberId > 0 ? rawMemberId : null
+        const userId =
+          Number.isFinite(rawUserId) && rawUserId > 0 ? rawUserId : null
+
+        if (!memberId && !userId) {
+          return null
+        }
+
+        const resolvedMemberId = memberId ?? userId ?? 0
+        const resolvedUserId = userId ?? memberId ?? 0
+
+        return {
+          id: resolvedMemberId,
+          userId: resolvedUserId,
+          userName:
+            member?.userName || member?.fullName || `User #${resolvedUserId}`,
+          userCode: member?.userCode || '',
+          avatarUrl: member?.avatarUrl ?? null,
+          isActive: member?.isActive ?? true,
+          role: member?.role || ''
+        }
+      })
+      .filter(
+        (member: GroupMember | null): member is GroupMember => member !== null
+      )
+  }, [membersResponse?.value])
+
+  useEffect(() => {
+    setCurrentGroupMembers(realMembers)
+  }, [realMembers, setCurrentGroupMembers])
   const MAX_VISIBLE_AVATARS = 3
   const visibleMembers = realMembers.slice(0, MAX_VISIBLE_AVATARS)
   const remainUsers =
     realMembers.length > MAX_VISIBLE_AVATARS
       ? realMembers.length - MAX_VISIBLE_AVATARS
       : 0
+
+  const currentMember = useMemo(() => {
+    if (!tokenUser.id) return null
+    return (
+      realMembers.find(
+        member => member.userId === tokenUser.id || member.id === tokenUser.id
+      ) || null
+    )
+  }, [realMembers, tokenUser.id])
 
   const handleConfirmAddMember = async (payload: {
     userId: number
@@ -76,34 +154,41 @@ export default function BoardBar({
           {groupDetail?.name || board?.title || 'Loading...'}
         </h1>
 
-        {/* 3. HIỂN THỊ AVATAR BẰNG DATA THẬT */}
-        <div className='flex items-center -space-x-2'>
-          {visibleMembers.map(user => (
-            <Avatar
-              key={user.userId} // Đã dùng key bằng userId chuẩn
-              className='h-8 w-8 border-2 border-white cursor-pointer hover:z-10 hover:scale-105 transition-all shadow-sm'
-              title={`${user.userName} - ${user.role}`}
-            >
-              <AvatarImage
-                src={user.avatarUrl} // Lấy avatarUrl từ API
-                alt={user.userName} // Đổi thành userName
-                className='object-cover'
-              />
-              <AvatarFallback className='bg-[#A3B899] text-white text-[10px]'>
-                {user.userName
-                  ? user.userName.substring(0, 2).toUpperCase()
-                  : 'U'}
-              </AvatarFallback>
-            </Avatar>
-          ))}
+        <ManageMembersModal
+          groupId={resolvedGroupId}
+          currentUser={{
+            id: tokenUser.id,
+            role: currentMember?.role || 'Member'
+          }}
+          trigger={
+            <div className='flex items-center -space-x-2 rounded-md px-1.5 py-1 cursor-pointer transition-all hover:bg-slate-100 hover:shadow-sm'>
+              {visibleMembers.map(user => (
+                <Avatar
+                  key={user.id}
+                  className='h-8 w-8 border-2 border-white hover:z-10 hover:scale-105 transition-all shadow-sm'
+                  title={`${user.userName} - ${user.role}`}
+                >
+                  <AvatarImage
+                    src={getAvatarSrc(user.avatarUrl)}
+                    alt={user.userName}
+                    className='object-cover'
+                  />
+                  <AvatarFallback
+                    className={`${getAvatarColorClass(user.userName)} text-white text-[10px] font-medium`}
+                  >
+                    {getAvatarFallback(user.userName)}
+                  </AvatarFallback>
+                </Avatar>
+              ))}
 
-          {/* Chỉ hiển thị số + khi thực sự có người thừa */}
-          {remainUsers > 0 && (
-            <div className='h-8 w-8 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center z-10 text-xs font-semibold text-slate-600 cursor-pointer hover:bg-slate-200 shadow-sm'>
-              +{remainUsers}
+              {remainUsers > 0 && (
+                <div className='h-8 w-8 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center z-10 text-xs font-semibold text-slate-600 hover:bg-slate-200 shadow-sm'>
+                  +{remainUsers}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          }
+        />
 
         <Button
           className='h-9 bg-blue-600 hover:bg-blue-700 text-white rounded-md px-4 font-medium shadow-sm'
@@ -124,14 +209,51 @@ export default function BoardBar({
       </div>
 
       <div className='flex items-center gap-2.5'>
-        <CreateCardDialog />
-        <Button
-          variant='outline'
-          className='h-9 text-slate-600 border-slate-200 hover:bg-slate-50 font-medium shadow-sm'
-        >
-          <Filter className='mr-2 h-4 w-4 text-slate-500' />
-          Filters
-        </Button>
+        <CreateCardDialog groupId={resolvedGroupId} />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant='outline'
+              className={`h-9 font-medium shadow-sm ${
+                isMyTasksOnly
+                  ? 'text-blue-700 border-blue-300 bg-blue-50 hover:bg-blue-100'
+                  : 'text-slate-600 border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              <Filter
+                className={`mr-2 h-4 w-4 ${
+                  isMyTasksOnly ? 'text-blue-600' : 'text-slate-500'
+                }`}
+              />
+              Filters
+              {isMyTasksOnly && (
+                <span className='ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1.5 text-xs font-semibold text-white'>
+                  1
+                </span>
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent align='start' className='w-56'>
+            <DropdownMenuLabel>Filters</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+
+            <DropdownMenuCheckboxItem
+              checked={isMyTasksOnly}
+              onCheckedChange={checked => onMyTasksOnlyChange(checked === true)}
+            >
+              Just my cards
+            </DropdownMenuCheckboxItem>
+
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              disabled={!isMyTasksOnly}
+              onClick={onClearFilters}
+            >
+              Clear filters
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <Button
           variant='outline'
           className='h-9 text-slate-600 border-slate-200 hover:bg-slate-50 font-medium shadow-sm'

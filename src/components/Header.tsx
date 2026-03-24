@@ -1,12 +1,4 @@
-import {
-  Search,
-  Bell,
-  Moon,
-  HelpCircle,
-  User,
-  KeyRound,
-  LogOut
-} from 'lucide-react'
+import { Search, Moon, HelpCircle, User, KeyRound, LogOut } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -17,8 +9,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import { getStoredAvatarUrl, withAvatarVersion } from '@/lib/avatar'
+import {
+  getAvatarColorClass,
+  getAvatarFallback,
+  getAvatarSrc,
+  getStoredAvatarUrl
+} from '@/lib/avatar'
 import { getCurrentUserFromToken } from '@/lib/token'
+import NotificationPopover from '@/modules/notification/components/NotificationPopover'
 import { useUserProfile } from '@/modules/user/hook/user.hook'
 import { useNavigate } from 'react-router-dom'
 
@@ -54,21 +52,14 @@ export default function Header({
     tokenUser.studentId ||
     '-'
 
-  const displayAvatar = withAvatarVersion(
+  const displayAvatar =
     avatarUrl ||
-      profileData?.avatarUrl ||
-      profileData?.avatar ||
-      getStoredAvatarUrl() ||
-      tokenUser.avatarUrl ||
-      'https://github.com/shadcn.png'
-  )
-  const initials =
-    displayName
-      .split(' ')
-      .filter(Boolean)
-      .slice(-2)
-      .map(part => part[0]?.toUpperCase())
-      .join('') || 'U'
+    profileData?.avatarUrl ||
+    profileData?.avatar ||
+    getStoredAvatarUrl() ||
+    tokenUser.avatarUrl ||
+    ''
+  const initials = getAvatarFallback(displayName)
 
   const Maps = (path: string) => {
     navigate(path)
@@ -99,13 +90,7 @@ export default function Header({
         >
           <Moon className='h-5 w-5' />
         </Button>
-        <Button
-          variant='ghost'
-          size='icon'
-          className='text-slate-500 rounded-full'
-        >
-          <Bell className='h-5 w-5' />
-        </Button>
+        <NotificationPopover />
         <Button
           variant='ghost'
           size='icon'
@@ -131,8 +116,12 @@ export default function Header({
                 </p>
               </div>
               <Avatar>
-                <AvatarImage src={displayAvatar} />
-                <AvatarFallback>{initials}</AvatarFallback>
+                <AvatarImage src={getAvatarSrc(displayAvatar)} />
+                <AvatarFallback
+                  className={`${getAvatarColorClass(displayName)} text-white font-medium`}
+                >
+                  {initials}
+                </AvatarFallback>
               </Avatar>
             </button>
           </DropdownMenuTrigger>

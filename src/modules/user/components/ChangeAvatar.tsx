@@ -5,6 +5,11 @@ import { Label } from '@/components/ui/label'
 import { Camera, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { useChangeAvatar } from '../hook/user.hook'
+import {
+  getAvatarColorClass,
+  getAvatarFallback,
+  getAvatarSrc
+} from '@/lib/avatar'
 
 interface ChangeAvatarProps {
   currentAvatarUrl?: string
@@ -24,16 +29,10 @@ export default function ChangeAvatar({
 
   const changeAvatarMutation = useChangeAvatar()
 
-  const initials = useMemo(() => {
-    return (
-      fallbackName
-        .split(' ')
-        .filter(Boolean)
-        .slice(-2)
-        .map(part => part[0]?.toUpperCase())
-        .join('') || 'U'
-    )
-  }, [fallbackName])
+  const initials = useMemo(
+    () => getAvatarFallback(fallbackName),
+    [fallbackName]
+  )
 
   useEffect(() => {
     return () => {
@@ -93,14 +92,17 @@ export default function ChangeAvatar({
     }
   }
 
-  const displayAvatar =
-    previewUrl || currentAvatarUrl || 'https://github.com/shadcn.png'
+  const displayAvatar = getAvatarSrc(previewUrl || currentAvatarUrl)
 
   return (
     <div className='flex flex-col items-center gap-4 w-full'>
       <Avatar className='h-28 w-28 border-4 border-blue-100'>
         <AvatarImage src={displayAvatar} />
-        <AvatarFallback>{initials}</AvatarFallback>
+        <AvatarFallback
+          className={`${getAvatarColorClass(fallbackName)} text-white text-3xl font-semibold`}
+        >
+          {initials}
+        </AvatarFallback>
       </Avatar>
 
       <div className='w-full flex flex-col items-center gap-2'>

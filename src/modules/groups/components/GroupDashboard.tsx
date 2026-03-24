@@ -111,58 +111,68 @@ export default function GroupDashboard() {
         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'>
           {groups.map(group => (
             <Link key={group.id} to={`/groups/${group.id}`} className='block'>
-              <Card className='hover:shadow-lg transition-shadow cursor-pointer group h-full'>
-                <CardHeader className='pb-3'>
-                  <div className='flex items-start justify-between mb-2'>
-                    <Badge variant='secondary' className='text-xs'>
-                      {group.category}
-                    </Badge>
-                    <TrendingUp
-                      className={`h-4 w-4 ${
-                        group.progress >= 50
-                          ? 'text-green-500'
-                          : 'text-slate-400'
-                      }`}
-                    />
-                  </div>
-                  <CardTitle className='text-lg group-hover:text-blue-600 transition-colors'>
-                    {group.name}
-                  </CardTitle>
-                </CardHeader>
+              {(() => {
+                const totalMemberCount = group.totalMemberCount ?? 0
+                const limitedUser = group.limitedUser ?? 0
 
-                <CardContent className='space-y-4'>
-                  {/* Members Count */}
-                  <div className='flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400'>
-                    <User className='h-4 w-4' />
-                    <span className='font-medium'>
-                      {group.memberCount} / {group.maxMembers} members
-                    </span>
-                    {group.maxMembers > 0 &&
-                      group.memberCount === group.maxMembers && (
-                        <Badge variant='outline' className='ml-auto text-xs'>
-                          Full
+                return (
+                  <Card className='hover:shadow-lg transition-shadow cursor-pointer group h-full'>
+                    <CardHeader className='pb-3'>
+                      <div className='flex items-start justify-between mb-2'>
+                        <Badge variant='secondary' className='text-xs'>
+                          {group.category}
                         </Badge>
-                      )}
-                  </div>
+                        <TrendingUp
+                          className={`h-4 w-4 ${
+                            group.progress >= 50
+                              ? 'text-green-500'
+                              : 'text-slate-400'
+                          }`}
+                        />
+                      </div>
+                      <CardTitle className='text-lg group-hover:text-blue-600 transition-colors'>
+                        {group.name}
+                      </CardTitle>
+                    </CardHeader>
 
-                  {/* Progress Section */}
-                  <div className='space-y-2'>
-                    <div className='flex items-center justify-between text-sm'>
-                      <span className='text-slate-600 dark:text-slate-400 font-medium'>
-                        Progress
-                      </span>
-                      <span className='font-bold text-slate-900 dark:text-slate-100'>
-                        {group.progress}%
-                      </span>
-                    </div>
-                    <Progress
-                      value={group.progress}
-                      className='h-2'
-                      indicatorClassName={getProgressColor(group.progress)}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+                    <CardContent className='space-y-4'>
+                      {/* Members Count */}
+                      <div className='flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400'>
+                        <User className='h-4 w-4' />
+                        <span className='font-medium'>
+                          {totalMemberCount} / {limitedUser} members
+                        </span>
+                        {limitedUser > 0 &&
+                          totalMemberCount === limitedUser && (
+                            <Badge
+                              variant='outline'
+                              className='ml-auto text-xs'
+                            >
+                              Full
+                            </Badge>
+                          )}
+                      </div>
+
+                      {/* Progress Section */}
+                      <div className='space-y-2'>
+                        <div className='flex items-center justify-between text-sm'>
+                          <span className='text-slate-600 dark:text-slate-400 font-medium'>
+                            Progress
+                          </span>
+                          <span className='font-bold text-slate-900 dark:text-slate-100'>
+                            {group.progress}%
+                          </span>
+                        </div>
+                        <Progress
+                          value={group.progress}
+                          className='h-2'
+                          indicatorClassName={getProgressColor(group.progress)}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })()}
             </Link>
           ))}
         </div>
