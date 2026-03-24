@@ -20,7 +20,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   useCreateGroupTask,
   useGetGroupMemberOptions
-} from '../hooks/useBoardTasks'
+} from '../hooks/useBoardHooks'
 import { toast } from 'sonner'
 import {
   getAvatarColorClass,

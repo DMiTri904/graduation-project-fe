@@ -4,11 +4,13 @@ import BoardContent from '../components/BoardContent'
 import { useParams } from 'react-router-dom'
 import { useGetGroupDetail } from '@/modules/groups/hooks/useGroups'
 import { useState } from 'react'
-import { useGetBoardTasks } from '../hooks/useBoardTasks'
+import {
+  useBoardDataMapper,
+  useBoardRole,
+  useGetBoardTasks
+} from '../hooks/useBoardHooks'
 import { getCurrentUserFromToken } from '@/lib/token'
 import { useBoardStore } from '../stores/useBoardStore'
-import { useBoardRole } from '../hooks/useBoardRole'
-import { useBoardDataMapper } from '../hooks/useBoardDataMapper'
 
 function Board() {
   const { id } = useParams<{ id: string }>()

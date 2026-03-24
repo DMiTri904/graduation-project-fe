@@ -28,7 +28,7 @@ import CardItem from './Card'
 import { generatePlaceholderCard } from '~/utils/formatters'
 import type { Board, Column, Card } from '../types/board'
 import { useBoardStore } from '../stores/useBoardStore'
-import { useTransitionTaskStatus } from '../hooks/useBoardTasks'
+import { useTransitionTaskStatus } from '../hooks/useBoardHooks'
 import type { TaskTransitionAction } from '../api/task.api'
 import { toast } from 'sonner'
 

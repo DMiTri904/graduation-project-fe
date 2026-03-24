@@ -9,9 +9,10 @@ import {
 import { cn } from '@/lib/utils'
 import {
   useGetNotifications,
-  useMarkAllAsRead,
-  useMarkAsRead
+  useNotificationClick,
+  useMarkAllAsRead
 } from '../hooks/useNotifications'
+import type { NotificationDto } from '../api/notification.api'
 
 interface ScrollAreaProps {
   children: React.ReactNode
@@ -37,9 +38,46 @@ const formatNotificationTime = (createdAt?: string) => {
   })
 }
 
+interface NotificationItemProps {
+  notification: NotificationDto
+  onClick: (notification: NotificationDto) => void
+  disabled?: boolean
+}
+
+const NotificationItem = ({
+  notification,
+  onClick,
+  disabled
+}: NotificationItemProps) => {
+  return (
+    <button
+      type='button'
+      onClick={() => onClick(notification)}
+      disabled={disabled}
+      className={cn(
+        'w-full px-4 py-3 text-left transition-colors hover:bg-slate-50 disabled:opacity-60',
+        notification.isRead ? 'bg-white' : 'bg-blue-50/70'
+      )}
+    >
+      <div className='flex items-start justify-between gap-3'>
+        <p className='text-sm font-medium text-slate-800 line-clamp-2'>
+          {notification.content}
+        </p>
+        {!notification.isRead && (
+          <span className='mt-1 h-2 w-2 shrink-0 rounded-full bg-blue-600' />
+        )}
+      </div>
+      <p className='mt-1 text-xs text-slate-500'>
+        {formatNotificationTime(notification.createdAt)}
+      </p>
+    </button>
+  )
+}
+
 export default function NotificationPopover() {
   const { data = [], isLoading } = useGetNotifications()
-  const { mutate: markAsRead, isPending: isMarkingSingle } = useMarkAsRead()
+  const { handleNotificationClick, isPending: isMarkingSingle } =
+    useNotificationClick()
   const { mutate: markAllAsRead, isPending: isMarkingAll } = useMarkAllAsRead()
 
   const unreadNotifications = data.filter(item => item.isRead === false)
@@ -93,32 +131,12 @@ export default function NotificationPopover() {
           ) : (
             <div className='divide-y divide-slate-100'>
               {data.map(notification => (
-                <button
+                <NotificationItem
                   key={notification.id}
-                  type='button'
-                  onClick={() => {
-                    if (!notification.isRead) {
-                      markAsRead(notification.id)
-                    }
-                  }}
+                  notification={notification}
+                  onClick={handleNotificationClick}
                   disabled={isMarkingSingle}
-                  className={cn(
-                    'w-full px-4 py-3 text-left transition-colors hover:bg-slate-50 disabled:opacity-60',
-                    notification.isRead ? 'bg-white' : 'bg-blue-50/70'
-                  )}
-                >
-                  <div className='flex items-start justify-between gap-3'>
-                    <p className='text-sm font-medium text-slate-800 line-clamp-2'>
-                      {notification.content}
-                    </p>
-                    {!notification.isRead && (
-                      <span className='mt-1 h-2 w-2 shrink-0 rounded-full bg-blue-600' />
-                    )}
-                  </div>
-                  <p className='mt-1 text-xs text-slate-500'>
-                    {formatNotificationTime(notification.createdAt)}
-                  </p>
-                </button>
+                />
               ))}
             </div>
           )}
