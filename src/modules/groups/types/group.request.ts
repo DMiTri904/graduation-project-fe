@@ -3,6 +3,7 @@ import { GroupMemberRole } from './group.enum'
 export interface CreateGroupRequest {
   name: string
   subjectOrProjectName: string
+  limitedUser: number
 }
 
 export interface UpdateGroupRequest {

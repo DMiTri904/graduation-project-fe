@@ -36,7 +36,7 @@ export const mockData: { board: Board } = {
             title: 'Define technical requirements for the feature release',
             description:
               'Need to document all technical requirements including API endpoints, database schema, and infrastructure needs.',
-            priority: 'urgent',
+            priority: 'high',
             assignee: 'Minh Tri',
             reporter: 'John Doe',
             dueDate: '2026-03-06',
@@ -127,7 +127,7 @@ export const mockData: { board: Board } = {
             columnId: 'column-id-01',
             title: 'Investigate production bug #2341',
             description: 'Users reporting timeout errors on checkout page',
-            priority: 'urgent',
+            priority: 'high',
             assignee: 'Minh Tri',
             dueDate: '2026-03-07',
             createdAt: '2026-03-06',

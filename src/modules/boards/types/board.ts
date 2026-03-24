@@ -5,8 +5,8 @@ export interface Card {
   issueKey?: string
   title?: string
   description?: string | null
-  priority?: 'low' | 'medium' | 'high' | 'urgent'
-  assignee?: string | null
+  priority?: 'low' | 'medium' | 'high'
+  assignedTo?: number | null
   reporter?: string
   dueDate?: string
   createdAt?: string
@@ -37,9 +37,11 @@ export interface Board {
 }
 
 export interface GroupMember {
-  userId: number
+  id: number
+  userId?: number
   userName: string
-  avatarUrl: string
+  userCode: string
+  avatarUrl: string | null
+  isActive: boolean
   role: string
-  joinedAt: string
 }

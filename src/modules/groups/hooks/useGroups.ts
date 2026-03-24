@@ -6,10 +6,11 @@ import {
   deleteGroup,
   createGroupAPI,
   addMemberToGroupAPI,
+  deleteGroupMemberAPI,
   getGroupDetailAPI,
   getGroupMembersAPI
 } from '../api/group.api'
-import type { CreateGroupPayload, JoinGroupPayload } from '../types/group'
+import type { JoinGroupPayload } from '../types/group'
 import type {
   AddMemberRequest,
   CreateGroupRequest
@@ -152,5 +153,38 @@ export const useGetGroupMembers = (groupId: number) => {
     queryKey: [...groupKeys.detail(groupId.toString()), 'members'],
     queryFn: () => getGroupMembersAPI(groupId),
     enabled: typeof groupId === 'number' && groupId > 0
+  })
+}
+
+export const useDeleteGroupMember = (groupId: number) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (userId: number) => deleteGroupMemberAPI(groupId, userId),
+    onSuccess: (_, userId) => {
+      queryClient.setQueryData(
+        [...groupKeys.detail(groupId.toString()), 'members'],
+        (oldData: any) => {
+          if (!oldData) return oldData
+
+          if (Array.isArray(oldData)) {
+            return oldData.filter(item => {
+              const targetUserId = Number(item?.userId ?? item?.id)
+              return targetUserId !== userId
+            })
+          }
+
+          const rawMembers = Array.isArray(oldData.value) ? oldData.value : []
+
+          return {
+            ...oldData,
+            value: rawMembers.filter((item: any) => {
+              const targetUserId = Number(item?.userId ?? item?.id)
+              return targetUserId !== userId
+            })
+          }
+        }
+      )
+    }
   })
 }

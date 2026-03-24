@@ -11,7 +11,7 @@ export interface ApiResponse<T> {
 const api = axios.create({
   baseURL: API_URL,
   timeout: 10000,
-  withCredentials: false, // Tắt credentials để tránh CORS preflight
+  withCredentials: false,
   headers: {
     'Content-Type': 'application/json'
   }

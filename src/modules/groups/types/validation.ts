@@ -12,6 +12,9 @@ export const createGroupSchema = yup.object().shape({
   category: yup.string().required('Danh mục là bắt buộc'),
   maxMembers: yup
     .number()
+    .transform(value => (Number.isNaN(value) ? undefined : value))
+    .required('Số lượng thành viên là bắt buộc')
+    .typeError('Vui lòng nhập một số hợp lệ')
     .min(2, 'Số thành viên tối thiểu là 2')
     .max(20, 'Số thành viên tối đa là 20')
     .default(5)

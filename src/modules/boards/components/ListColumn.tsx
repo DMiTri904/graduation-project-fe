@@ -5,7 +5,7 @@ import {
   SortableContext,
   horizontalListSortingStrategy
 } from '@dnd-kit/sortable'
-import { Column } from '../types/board'
+import type { Column } from '../types/board'
 
 interface ListColumnProps {
   columns: Column[]

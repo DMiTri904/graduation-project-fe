@@ -28,6 +28,9 @@ import CardItem from './Card'
 import { generatePlaceholderCard } from '~/utils/formatters'
 import type { Board, Column, Card } from '../types/board'
 import { useBoardStore } from '../stores/useBoardStore'
+import { useTransitionTaskStatus } from '../hooks/useBoardTasks'
+import type { TaskTransitionAction } from '../api/task.api'
+import { toast } from 'sonner'
 
 const ACTIVE_DRAG_ITEM_TYPE = {
   COLUMN: 'ACTIVE_DRAG_ITEM_TYPE_COLUMN',
@@ -39,11 +42,35 @@ type ActiveDragItemType =
 
 interface BoardContentProps {
   board?: Board
+  currentUserRole?: string
 }
 
-function BoardContent({ board: boardProp }: BoardContentProps) {
+const BLOCKED_MEMBER_ACTION_MESSAGE =
+  'Chỉ Leader mới có quyền duyệt hoặc từ chối Task'
+
+const resolveTransitionAction = (
+  fromColumnId: string,
+  toColumnId: string
+): TaskTransitionAction | null => {
+  if (fromColumnId === 'todo' && toColumnId === 'inprogress') return 'start'
+  if (fromColumnId === 'inprogress' && toColumnId === 'test') return 'test'
+  if (fromColumnId === 'test' && toColumnId === 'complete') return 'complete'
+  if (fromColumnId === 'test' && toColumnId === 'inprogress') return 'reject'
+  return null
+}
+
+const parseTaskIdFromCardId = (cardId: string): number => {
+  const parsed = Number(String(cardId || '').replace(/\D/g, ''))
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0
+}
+
+function BoardContent({
+  board: boardProp,
+  currentUserRole
+}: BoardContentProps) {
   // Use Zustand store
-  const board = useBoardStore(state => state.board) || boardProp
+  const board = useBoardStore(state => state.board)
+  const initializeBoard = useBoardStore(state => state.initializeBoard)
   const { reorderColumns, reorderCardsInColumn } = useBoardStore()
 
   const mouseSensor = useSensor(MouseSensor, {
@@ -63,8 +90,22 @@ function BoardContent({ board: boardProp }: BoardContentProps) {
   >(null)
   const [oldColumnWhenDraggingCard, setOldColumnWhenDraggingCard] =
     useState<Column | null>(null)
+  const [columnsBeforeDragging, setColumnsBeforeDragging] = useState<Column[]>(
+    []
+  )
 
   const lastOverId = useRef<string | null>(null)
+  const normalizedRole = (currentUserRole || 'Member').trim().toLowerCase()
+  const isLeader = normalizedRole === 'leader'
+  const boardGroupId = Number((board?._id || '').replace(/\D/g, ''))
+  const { mutateAsync: transitionTaskStatusMutateAsync } =
+    useTransitionTaskStatus(boardGroupId)
+
+  useEffect(() => {
+    if (boardProp) {
+      initializeBoard(boardProp)
+    }
+  }, [boardProp, initializeBoard])
 
   useEffect(() => {
     if (board) {
@@ -155,6 +196,7 @@ function BoardContent({ board: boardProp }: BoardContentProps) {
   }
 
   const handleDragStart = (e: DragStartEvent) => {
+    setColumnsBeforeDragging(cloneDeep(orderedColumns))
     setActiveDragitemId(e?.active?.id as string)
     setActiveDragItemType(
       e?.active?.data?.current?.columnId
@@ -200,10 +242,26 @@ function BoardContent({ board: boardProp }: BoardContentProps) {
     }
   }
 
-  const handleDragEnd = (e: DragEndEvent) => {
+  const resetDraggingState = () => {
+    setActiveDragitemId(null)
+    setActiveDragItemType(null)
+    setActiveDragItemData(null)
+    setOldColumnWhenDraggingCard(null)
+  }
+
+  const rollbackToPreviousColumns = () => {
+    if (columnsBeforeDragging.length > 0) {
+      setOrderedColumns(cloneDeep(columnsBeforeDragging))
+    }
+  }
+
+  const handleDragEnd = async (e: DragEndEvent) => {
     const { active, over } = e
 
-    if (!active || !over) return
+    if (!active || !over) {
+      resetDraggingState()
+      return
+    }
 
     if (
       activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.CARD &&
@@ -218,9 +276,37 @@ function BoardContent({ board: boardProp }: BoardContentProps) {
       const activeColumn = findColumnByCardId(activeDraggingCardId as string)
       const overColumn = findColumnByCardId(overCardId as string)
 
-      if (!activeColumn || !overColumn) return
+      if (!activeColumn || !overColumn) {
+        resetDraggingState()
+        return
+      }
 
       if (oldColumnWhenDraggingCard._id !== overColumn._id) {
+        const fromColumnId = oldColumnWhenDraggingCard._id
+        const toColumnId = overColumn._id
+        const transitionAction = resolveTransitionAction(
+          fromColumnId,
+          toColumnId
+        )
+
+        if (!transitionAction) {
+          rollbackToPreviousColumns()
+          toast.error('Không hỗ trợ chuyển task theo hướng này')
+          resetDraggingState()
+          return
+        }
+
+        const isRestrictedForMember =
+          !isLeader &&
+          (transitionAction === 'complete' || transitionAction === 'reject')
+
+        if (isRestrictedForMember) {
+          rollbackToPreviousColumns()
+          toast.error(BLOCKED_MEMBER_ACTION_MESSAGE)
+          resetDraggingState()
+          return
+        }
+
         moveCardBetweenDifferentColumns(
           overColumn,
           overCardId as string,
@@ -230,6 +316,24 @@ function BoardContent({ board: boardProp }: BoardContentProps) {
           activeDraggingCardId as string,
           activeDraggingCardData as Card
         )
+
+        const taskId = parseTaskIdFromCardId(activeDraggingCardId as string)
+
+        if (taskId <= 0) {
+          rollbackToPreviousColumns()
+          toast.error('Không xác định được task để cập nhật trạng thái')
+          resetDraggingState()
+          return
+        }
+
+        try {
+          await transitionTaskStatusMutateAsync({
+            taskId,
+            action: transitionAction
+          })
+        } catch {
+          rollbackToPreviousColumns()
+        }
       } else {
         const oldCardIndex =
           oldColumnWhenDraggingCard?.cards?.findIndex(
@@ -278,10 +382,7 @@ function BoardContent({ board: boardProp }: BoardContentProps) {
       }
     }
 
-    setActiveDragitemId(null)
-    setActiveDragItemType(null)
-    setActiveDragItemData(null)
-    setOldColumnWhenDraggingCard(null)
+    resetDraggingState()
   }
 
   const customDropAnimation = {

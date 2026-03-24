@@ -1,20 +1,8 @@
-import { useState } from 'react'
-import {
-  AlertCircle,
-  Clock,
-  User,
-  CheckSquare,
-  ChevronDown,
-  Flag,
-  CheckCircle2,
-  Circle,
-  ArrowUp,
-  ArrowDown,
-  Minus
-} from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { Clock, User, CheckCircle2 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   Popover,
   PopoverContent,
@@ -24,17 +12,22 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator
+  DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import { Button } from '@/components/ui/button'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { Card as CardType } from '../types/board'
 import CardDetailSheet from './CardDetailSheet'
 import { useBoardStore } from '../stores/useBoardStore'
-import { mockTeamMembers, getCurrentUserId } from '~/apis/team-members'
+import { useAssignTask } from '../hooks/useBoardTasks'
 import { formatIssueKey } from '~/utils/formatters'
+import { formatDueDateForCard } from '@/utils/boardFormatters'
+import { getCurrentUserFromToken } from '@/lib/token'
+import {
+  getAvatarColorClass,
+  getAvatarFallback,
+  getAvatarSrc
+} from '@/lib/avatar'
 import {
   getPriorityConfig,
   PRIORITY_OPTIONS,
@@ -49,7 +42,19 @@ function TrelloCard({ card }: CardProps) {
   const [isDetailOpen, setIsDetailOpen] = useState(false)
   const [isAssignPopoverOpen, setIsAssignPopoverOpen] = useState(false)
   const [isPriorityDropdownOpen, setIsPriorityDropdownOpen] = useState(false)
-  const { updateCard } = useBoardStore()
+  const { updateCard, currentGroupMembers, currentUser } = useBoardStore()
+
+  const taskId = useMemo(() => {
+    const id = Number(String(card._id || '').replace(/\D/g, ''))
+    return Number.isFinite(id) && id > 0 ? id : 0
+  }, [card._id])
+
+  const groupId = useMemo(() => {
+    const id = Number(String(card.boardId || '').replace(/\D/g, ''))
+    return Number.isFinite(id) && id > 0 ? id : 0
+  }, [card.boardId])
+
+  const { mutateAsync: assignTaskMutateAsync } = useAssignTask(groupId)
 
   const {
     attributes,
@@ -70,18 +75,16 @@ function TrelloCard({ card }: CardProps) {
     border: isDragging ? '2px solid #10b981' : undefined
   }
 
-  // Format date helper
-  const formatDueDate = (dateString?: string) => {
-    if (!dateString) return null
-    const date = new Date(dateString)
-    const today = new Date()
-    const isOverdue = date < today
+  const getDueDateMeta = (dateString?: string) => {
+    const formatted = formatDueDateForCard(dateString)
+    if (!formatted || !dateString) return null
+
+    const parsedDate = new Date(dateString)
+    const now = new Date()
+    const isOverdue = parsedDate.getTime() < now.getTime()
 
     return {
-      formatted: date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric'
-      }),
+      formatted,
       isOverdue
     }
   }
@@ -89,40 +92,79 @@ function TrelloCard({ card }: CardProps) {
   // Get priority configuration
   const priorityConfig = getPriorityConfig(card?.priority)
 
-  // Get assignee initials
-  const getInitials = (name?: string) => {
-    if (!name) return '?'
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2)
-  }
+  const assignedUser = currentGroupMembers?.find(
+    m => m.id === card.assignedTo || m.userId === card.assignedTo
+  )
 
-  // Handle Quick Assign
-  const handleAssignToMe = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    const currentUser = mockTeamMembers.find(m => m.id === getCurrentUserId())
+  const currentUserMember = useMemo(() => {
+    if (!currentGroupMembers?.length) return null
+
     if (currentUser) {
-      updateCard(card._id, { assignee: currentUser.name })
+      const matchedByStore = currentGroupMembers.find(
+        member =>
+          member.id === currentUser.id ||
+          member.userId === currentUser.id ||
+          (typeof currentUser.userId === 'number' &&
+            (member.id === currentUser.userId ||
+              member.userId === currentUser.userId))
+      )
+      if (matchedByStore) return matchedByStore
+    }
+
+    const tokenUser = getCurrentUserFromToken()
+    const normalizedName = (tokenUser.fullName || '').trim().toLowerCase()
+    const normalizedCode = (tokenUser.studentId || '').trim().toLowerCase()
+
+    return (
+      currentGroupMembers.find(member => {
+        const memberName = (member.userName || '').trim().toLowerCase()
+        const memberCode = (member.userCode || '').trim().toLowerCase()
+
+        return (
+          (!!normalizedCode && memberCode === normalizedCode) ||
+          (!!normalizedName && memberName === normalizedName)
+        )
+      }) || null
+    )
+  }, [currentGroupMembers, currentUser])
+
+  const handleAssignToMe = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (currentUserMember) {
+      const assignTarget = currentUserMember.id
+      const assignedToForUi = currentUserMember.userId ?? currentUserMember.id
+
+      if (taskId > 0 && groupId > 0) {
+        await assignTaskMutateAsync({ taskId, assignedTo: assignTarget })
+      }
+      updateCard(card._id, { assignedTo: assignedToForUi })
     }
     setIsAssignPopoverOpen(false)
   }
 
-  const handleAssignToUser = (userName: string, e: React.MouseEvent) => {
+  // Đổi type của userId thành number cho khớp với giao diện
+  const handleAssignToUser = async (
+    memberId: number,
+    assignedUserId: number,
+    e: React.MouseEvent
+  ) => {
     e.stopPropagation()
-    updateCard(card._id, { assignee: userName })
+    if (taskId > 0 && groupId > 0) {
+      await assignTaskMutateAsync({ taskId, assignedTo: memberId })
+    }
+    updateCard(card._id, { assignedTo: assignedUserId })
     setIsAssignPopoverOpen(false)
   }
 
-  const handleUnassign = (e: React.MouseEvent) => {
+  const handleUnassign = async (e: React.MouseEvent) => {
     e.stopPropagation()
-    updateCard(card._id, { assignee: undefined })
+    if (taskId > 0 && groupId > 0) {
+      await assignTaskMutateAsync({ taskId, assignedTo: null })
+    }
+    updateCard(card._id, { assignedTo: null })
     setIsAssignPopoverOpen(false)
   }
 
-  // Handle Quick Priority Change
   const handlePriorityChange = (
     priority: PriorityLevel,
     e: React.MouseEvent
@@ -132,7 +174,6 @@ function TrelloCard({ card }: CardProps) {
     setIsPriorityDropdownOpen(false)
   }
 
-  // Don't render placeholder cards at all
   if (card?.FE_PlaceholderCard) {
     return (
       <div
@@ -144,10 +185,9 @@ function TrelloCard({ card }: CardProps) {
     )
   }
 
-  const dueDate = formatDueDate(card?.dueDate)
+  const dueDate = getDueDateMeta(card?.dueDate)
 
   const handleCardClick = (e: React.MouseEvent) => {
-    // Don't open detail if we're dragging
     if (isDragging) return
     setIsDetailOpen(true)
   }
@@ -234,45 +274,61 @@ function TrelloCard({ card }: CardProps) {
             )}
           </div>
 
-          {/* Bottom Row - Quick Actions */}
+          {/* Bottom Row - Quick Actions & Stats */}
           <div className='flex items-center justify-between pt-1'>
+            {/* Task Stats */}
+            <div className='flex items-center gap-3 text-xs text-slate-500'>
+              {(card?.comments?.length || 0) > 0 && (
+                <span className='flex items-center gap-1 hover:text-slate-700'>
+                  💬 {card.comments?.length}
+                </span>
+              )}
+              {(card?.attachments?.length || 0) > 0 && (
+                <span className='flex items-center gap-1 hover:text-slate-700'>
+                  📎 {card.attachments?.length}
+                </span>
+              )}
+            </div>
+
             {/* Quick Assign Popover */}
             <Popover
               open={isAssignPopoverOpen}
               onOpenChange={setIsAssignPopoverOpen}
             >
               <PopoverTrigger asChild>
-                {card?.assignee ? (
+                {assignedUser ? (
                   <button
-                    className='flex items-center gap-2 hover:bg-slate-50 rounded px-1.5 py-1 -mx-1.5 transition-colors group'
+                    className='flex items-center justify-center rounded-full transition-all hover:ring-2 hover:ring-slate-300 outline-none'
                     onClick={e => e.stopPropagation()}
                     onPointerDown={e => e.stopPropagation()}
+                    title={`Assignee: ${assignedUser.userName}`}
                   >
-                    <Avatar className='h-6 w-6 ring-2 ring-white group-hover:ring-slate-200 transition-all'>
-                      <AvatarFallback className='text-xs bg-blue-100 text-blue-700 font-medium'>
-                        {getInitials(card.assignee)}
+                    <Avatar className='h-6 w-6'>
+                      <AvatarImage
+                        src={getAvatarSrc(assignedUser.avatarUrl)}
+                        alt={assignedUser.userName}
+                      />
+                      <AvatarFallback
+                        className={`${getAvatarColorClass(assignedUser.userName)} text-[10px] text-white font-medium`}
+                      >
+                        {getAvatarFallback(assignedUser.userName)}
                       </AvatarFallback>
                     </Avatar>
-                    <span className='text-xs text-slate-600 group-hover:text-slate-900'>
-                      {card.assignee}
-                    </span>
                   </button>
                 ) : (
                   <button
-                    className='flex items-center gap-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded px-1.5 py-1 -mx-1.5 transition-colors'
+                    className='flex items-center justify-center h-6 w-6 rounded-full border border-dashed border-slate-300 text-slate-400 hover:text-slate-600 hover:bg-slate-50 hover:border-slate-400 transition-colors'
                     onClick={e => e.stopPropagation()}
                     onPointerDown={e => e.stopPropagation()}
+                    title='Unassigned'
                   >
-                    <div className='h-6 w-6 rounded-full border-2 border-dashed border-slate-300 flex items-center justify-center'>
-                      <User className='h-3 w-3' />
-                    </div>
-                    <span className='text-xs'>Unassigned</span>
+                    <User className='h-3.5 w-3.5' />
                   </button>
                 )}
               </PopoverTrigger>
               <PopoverContent
                 className='p-2 w-64'
-                align='start'
+                align='end'
                 onClick={e => e.stopPropagation()}
                 onPointerDown={e => e.stopPropagation()}
               >
@@ -309,26 +365,39 @@ function TrelloCard({ card }: CardProps) {
 
                   {/* Team members */}
                   <div className='max-h-48 overflow-y-auto space-y-0.5'>
-                    {mockTeamMembers.map(member => (
+                    {currentGroupMembers.map(member => (
                       <button
                         key={member.id}
                         className='w-full flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-slate-100 rounded transition-colors text-left'
-                        onClick={e => handleAssignToUser(member.name, e)}
+                        onClick={e =>
+                          handleAssignToUser(
+                            member.id,
+                            member.userId ?? member.id,
+                            e
+                          )
+                        }
                       >
                         <Avatar className='h-6 w-6'>
-                          <AvatarFallback className='text-xs bg-slate-200 text-slate-700'>
-                            {getInitials(member.name)}
+                          <AvatarImage
+                            src={getAvatarSrc(member.avatarUrl)}
+                            alt={member.userName}
+                          />
+                          <AvatarFallback
+                            className={`${getAvatarColorClass(member.userName)} text-xs text-white font-medium`}
+                          >
+                            {getAvatarFallback(member.userName)}
                           </AvatarFallback>
                         </Avatar>
                         <div className='flex-1 min-w-0'>
                           <div className='text-sm text-slate-900 truncate'>
-                            {member.name}
+                            {member.userName}
                           </div>
                           <div className='text-xs text-slate-500 truncate'>
-                            {member.email}
+                            {member.userCode}
                           </div>
                         </div>
-                        {card.assignee === member.name && (
+                        {(card.assignedTo === member.id ||
+                          card.assignedTo === member.userId) && (
                           <CheckCircle2 className='h-4 w-4 text-blue-600 shrink-0' />
                         )}
                       </button>
@@ -337,20 +406,6 @@ function TrelloCard({ card }: CardProps) {
                 </div>
               </PopoverContent>
             </Popover>
-
-            {/* Task Stats */}
-            <div className='flex items-center gap-2 text-xs text-slate-500'>
-              {(card?.comments?.length || 0) > 0 && (
-                <span className='flex items-center gap-1'>
-                  💬 {card.comments?.length}
-                </span>
-              )}
-              {(card?.attachments?.length || 0) > 0 && (
-                <span className='flex items-center gap-1'>
-                  📎 {card.attachments?.length}
-                </span>
-              )}
-            </div>
           </div>
         </CardContent>
       </Card>

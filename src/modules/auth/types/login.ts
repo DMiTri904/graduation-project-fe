@@ -1,7 +1,8 @@
 import * as yup from 'yup'
 
 // Regex kiểm tra MSSV: Bắt buộc CHÍNH XÁC 8 chữ số
-export const MSSV_REGEX = /^[0-9]{8}$/
+// export const MSSV_REGEX = /^[0-9]{8}$/
+export const MSSV_REGEX = /^[a-zA-Z0-9]{8}$/
 
 export const ERROR_MESSAGES = {
   invalidMssv: 'MSSV không hợp lệ (phải gồm chính xác 8 chữ số).',

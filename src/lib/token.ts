@@ -1,4 +1,5 @@
 export interface TokenUserInfo {
+  id?: number
   fullName?: string
   email?: string
   studentId?: string
@@ -34,6 +35,28 @@ const claim = (
   return undefined
 }
 
+const numericClaim = (
+  payload: Record<string, any>,
+  keys: string[]
+): number | undefined => {
+  for (const key of keys) {
+    const value = payload[key]
+
+    if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+      return value
+    }
+
+    if (typeof value === 'string') {
+      const parsed = Number(value.trim())
+      if (Number.isFinite(parsed) && parsed > 0) {
+        return parsed
+      }
+    }
+  }
+
+  return undefined
+}
+
 export const getCurrentUserFromToken = (): TokenUserInfo => {
   const token = localStorage.getItem('accessToken')
   if (!token) return {}
@@ -42,6 +65,13 @@ export const getCurrentUserFromToken = (): TokenUserInfo => {
   if (!payload) return {}
 
   return {
+    id: numericClaim(payload, [
+      'id',
+      'userId',
+      'nameid',
+      'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier',
+      'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/sid'
+    ]),
     fullName: claim(payload, [
       'fullName',
       'name',

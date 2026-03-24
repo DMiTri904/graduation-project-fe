@@ -70,7 +70,7 @@ export default function ProfilePage() {
           profileData?.avatar ||
           getStoredAvatarUrl() ||
           tokenUser.avatarUrl ||
-          'https://github.com/shadcn.png'
+          ''
       )
     }),
     [profileData, tokenUser, dataUpdatedAt]

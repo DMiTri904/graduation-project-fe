@@ -10,7 +10,6 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { Input } from '@/components/ui/input' // <-- THÊM IMPORT INPUT
 import {
   Popover,
   PopoverContent,
@@ -22,7 +21,7 @@ import {
   CommandItem,
   CommandList
 } from '@/components/ui/command'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   Select,
   SelectContent,
@@ -32,13 +31,18 @@ import {
 } from '@/components/ui/select'
 import { useDebounce } from '@/hooks/useDebounce'
 import { cn } from '@/lib/utils'
+import {
+  getAvatarColorClass,
+  getAvatarFallback,
+  getAvatarSrc
+} from '@/lib/avatar'
+import { toast } from 'sonner'
+import {
+  searchUsersAPI,
+  type SearchUserResponse
+} from '@/modules/user/api/user.api'
 
-export interface User {
-  id: number
-  fullName: string
-  email: string
-  avatar?: string
-}
+export type User = SearchUserResponse
 
 type MemberRole = 'Member' | 'Leader'
 
@@ -51,55 +55,8 @@ interface AddMemberModalProps {
   isOpen: boolean
   onClose: () => void
   groupId: number
-  groupName: string
+  groupName?: string
   onConfirm?: (payload: AddMemberPayload) => Promise<void> | void
-}
-
-// Hàm Fake API để test giao diện trước (Giữ nguyên)
-const searchUsersAPI = async (keyword: string): Promise<User[]> => {
-  const normalized = keyword.trim().toLowerCase()
-  await new Promise(resolve => setTimeout(resolve, 550))
-
-  if (!normalized) {
-    return [
-      {
-        id: 1,
-        fullName: 'Minh Trí',
-        email: 'minhtri@student.edu.vn',
-        avatar: ''
-      },
-      {
-        id: 2,
-        fullName: 'Trí Nguyễn',
-        email: 'tri.nguyen@student.edu.vn',
-        avatar: ''
-      },
-      { id: 3, fullName: 'Trí Tri', email: 'tritri@student.edu.vn', avatar: '' }
-    ]
-  }
-
-  const firstWord = normalized.split(' ')[0] || normalized
-  const titleWord = firstWord.charAt(0).toUpperCase() + firstWord.slice(1)
-
-  return Array.from({ length: 4 }, (_, index) => {
-    const itemIndex = index + 1
-    return {
-      id: itemIndex + 10,
-      fullName: `${titleWord} ${itemIndex}`,
-      email: `${firstWord}${itemIndex}@student.edu.vn`,
-      avatar: ''
-    }
-  })
-}
-
-const getAvatarFallback = (fullName: string) => {
-  if (!fullName) return 'U'
-  return fullName
-    .split(' ')
-    .filter(Boolean)
-    .slice(-2)
-    .map(part => part[0]?.toUpperCase())
-    .join('')
 }
 
 export default function AddMemberModal({
@@ -109,29 +66,52 @@ export default function AddMemberModal({
   groupName,
   onConfirm
 }: AddMemberModalProps) {
-  // --- CÁC STATE CỦA TÌM KIẾM (GIỮ NGUYÊN ĐỂ SAU NÀY DÙNG LẠI) ---
   const [openCombobox, setOpenCombobox] = useState(false)
   const [searchValue, setSearchValue] = useState('')
   const [selectedUsers, setSelectedUsers] = useState<User[]>([])
-
-  // --- STATE CHUNG ---
   const [selectedRole, setSelectedRole] = useState<MemberRole>('Member')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [users, setUsers] = useState<User[]>([])
   const [isSearching, setIsSearching] = useState(false)
 
-  // --- STATE MỚI CHO TÍNH NĂNG THÊM NHANH BẰNG ID ---
-  const [quickUserId, setQuickUserId] = useState('')
+  const debouncedSearch = useDebounce(searchValue, 450)
 
-  const debouncedSearch = useDebounce(searchValue, 300)
+  useEffect(() => {
+    if (!isOpen) {
+      setOpenCombobox(false)
+      setSearchValue('')
+      setSelectedUsers([])
+      setSelectedRole('Member')
+      setUsers([])
+      setIsSearching(false)
+    }
+  }, [isOpen])
 
   useEffect(() => {
     let isMounted = true
+
     const fetchUsers = async () => {
+      const keyword = debouncedSearch.trim()
+      if (!keyword) {
+        if (isMounted) {
+          setUsers([])
+          setIsSearching(false)
+        }
+        return
+      }
+
       setIsSearching(true)
       try {
-        const result = await searchUsersAPI(debouncedSearch)
+        const result = await searchUsersAPI(keyword)
         if (isMounted) setUsers(result)
+      } catch (error: any) {
+        if (isMounted) setUsers([])
+        toast.error('Không tìm được người dùng', {
+          description:
+            error?.response?.data?.message ||
+            error?.message ||
+            'Vui lòng thử lại sau.'
+        })
       } finally {
         if (isMounted) setIsSearching(false)
       }
@@ -142,21 +122,18 @@ export default function AddMemberModal({
     }
   }, [debouncedSearch])
 
-  // Logic cũ (giữ nguyên)
   useEffect(() => {
     if (selectedUsers.length > 1 && selectedRole === 'Leader') {
       setSelectedRole('Member')
     }
   }, [selectedUsers, selectedRole])
 
-  // Logic cũ (giữ nguyên)
   const hasNoResult = useMemo(() => {
     return (
       debouncedSearch.trim().length > 0 && !isSearching && users.length === 0
     )
   }, [debouncedSearch, isSearching, users])
 
-  // Logic cũ (giữ nguyên)
   const toggleSelectUser = (user: User) => {
     setSelectedUsers(prev => {
       const isSelected = prev.some(u => u.id === user.id)
@@ -168,7 +145,6 @@ export default function AddMemberModal({
     setSearchValue('')
   }
 
-  // Logic cũ (giữ nguyên)
   const removeSelectedUser = (id: number, e: React.MouseEvent) => {
     e.stopPropagation()
     setSelectedUsers(prev => prev.filter(u => u.id !== id))
@@ -180,41 +156,35 @@ export default function AddMemberModal({
     setSearchValue('')
     setSelectedUsers([])
     setSelectedRole('Member')
-    setQuickUserId('') // Reset ô nhập ID nhanh
+    setUsers([])
     onClose()
   }
 
-  // SỬA LẠI HÀM CONFIRM ĐỂ DÙNG quickUserId THAY VÌ selectedUsers
   const handleConfirm = async () => {
-    // Nếu dùng tính năng tìm kiếm (sau này mở lại):
-    // if (selectedUsers.length === 0) return
-
-    // Hiện tại dùng ID nhanh:
-    const parsedId = Number(quickUserId)
-    if (!quickUserId.trim() || isNaN(parsedId) || parsedId <= 0) return
+    if (selectedUsers.length === 0) return
 
     setIsSubmitting(true)
     try {
       if (onConfirm) {
-        // --- LOGIC GŨ (Khi dùng tính năng tìm kiếm) ---
-        // for (const user of selectedUsers) {
-        //   const payload: AddMemberPayload = {
-        //     userId: user.id,
-        //     role: selectedRole
-        //   }
-        //   await onConfirm(payload)
-        // }
-
-        // --- LOGIC MỚI (Thêm nhanh 1 user) ---
-        const payload: AddMemberPayload = {
-          userId: parsedId,
-          role: selectedRole
+        for (const user of selectedUsers) {
+          const payload: AddMemberPayload = {
+            userId: user.id,
+            role: selectedRole
+          }
+          await onConfirm(payload)
         }
-        await onConfirm(payload)
       }
       handleClose()
-    } catch (error) {
-      console.error(error)
+      toast.success('Thêm thành viên thành công', {
+        description: `Đã thêm ${selectedUsers.length} thành viên vào nhóm.`
+      })
+    } catch (error: any) {
+      toast.error('Thêm thành viên thất bại', {
+        description:
+          error?.response?.data?.message ||
+          error?.message ||
+          'Vui lòng thử lại sau.'
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -229,35 +199,140 @@ export default function AddMemberModal({
             Thêm thành viên mới
           </DialogTitle>
           <DialogDescription>
-            {/* Đổi description tạm thời */}
-            Nhập trực tiếp ID để thêm thành viên vào nhóm{' '}
+            Tìm kiếm theo tên hoặc email để thêm thành viên vào nhóm{' '}
             <span className='font-semibold text-foreground'>{groupName}</span>.
           </DialogDescription>
         </DialogHeader>
 
         <div className='space-y-4 py-2'>
           <div className='space-y-2'>
-            <Label htmlFor='member-search'>
-              Thành viên đã chọn (Nhập ID User)
-            </Label>
+            <Label htmlFor='member-search'>Thành viên đã chọn</Label>
 
-            {/* --- BẮT ĐẦU: KHU VỰC TÌM KIẾM ĐÃ ĐƯỢC COMMENT --- */}
-            {/* <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
-              ... (Toàn bộ code Popover và Command của bạn ở đây) ...
-            </Popover> 
-            */}
-            {/* --- KẾT THÚC: KHU VỰC TÌM KIẾM ĐÃ ĐƯỢC COMMENT --- */}
+            <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
+              <PopoverTrigger asChild>
+                <div
+                  className={cn(
+                    'flex min-h-10 w-full flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 cursor-text',
+                    isSubmitting && 'opacity-50 cursor-not-allowed'
+                  )}
+                  onClick={() => !isSubmitting && setOpenCombobox(true)}
+                >
+                  {selectedUsers.map(user => (
+                    <span
+                      key={user.id}
+                      className='flex items-center gap-1 rounded bg-secondary px-2 py-1 text-xs font-medium text-secondary-foreground'
+                    >
+                      {user.fullName}
+                      <button
+                        type='button'
+                        onClick={e => removeSelectedUser(user.id, e)}
+                        className='ml-1 rounded-full outline-none hover:bg-muted-foreground/20 focus:bg-muted-foreground/20'
+                      >
+                        <X className='h-3 w-3' />
+                      </button>
+                    </span>
+                  ))}
 
-            {/* --- BẮT ĐẦU: Ô NHẬP ID TẠM THỜI --- */}
-            <Input
-              id='quick-user-id'
-              type='number'
-              placeholder='Nhập ID của người dùng (VD: 1, 2, 3...)'
-              value={quickUserId}
-              onChange={e => setQuickUserId(e.target.value)}
-              disabled={isSubmitting}
-            />
-            {/* --- KẾT THÚC: Ô NHẬP ID TẠM THỜI --- */}
+                  <div className='flex flex-1 items-center gap-2 min-w-37.5'>
+                    {selectedUsers.length === 0 && (
+                      <Search className='h-4 w-4 shrink-0 opacity-50' />
+                    )}
+                    <input
+                      id='member-search'
+                      className='flex-1 bg-transparent outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed'
+                      placeholder={
+                        selectedUsers.length === 0
+                          ? 'Nhập tên hoặc email...'
+                          : 'Thêm người khác...'
+                      }
+                      value={searchValue}
+                      disabled={isSubmitting}
+                      autoComplete='off'
+                      onChange={e => {
+                        setSearchValue(e.target.value)
+                        setOpenCombobox(true)
+                      }}
+                    />
+                  </div>
+                </div>
+              </PopoverTrigger>
+
+              <PopoverContent
+                className='w-(--radix-popover-trigger-width) p-0'
+                align='start'
+                onOpenAutoFocus={e => e.preventDefault()}
+              >
+                <Command>
+                  <CommandList>
+                    {isSearching && (
+                      <div className='px-3 py-4 text-center text-sm text-muted-foreground flex items-center justify-center gap-2'>
+                        <Loader2 className='h-4 w-4 animate-spin' />
+                        Đang tìm kiếm...
+                      </div>
+                    )}
+
+                    {hasNoResult && (
+                      <div className='px-3 py-4 text-center text-sm text-muted-foreground'>
+                        Không tìm thấy thành viên phù hợp.
+                      </div>
+                    )}
+
+                    {!isSearching && users.length > 0 && (
+                      <CommandGroup>
+                        <div className='px-2 py-1.5 text-xs font-medium text-muted-foreground'>
+                          Kết quả tìm kiếm
+                        </div>
+
+                        {users.map(user => {
+                          const isSelected = selectedUsers.some(
+                            u => u.id === user.id
+                          )
+                          return (
+                            <CommandItem
+                              key={user.id}
+                              value={`${user.fullName}-${user.email}-${user.userCode || ''}`}
+                              onSelect={() => toggleSelectUser(user)}
+                              className='flex items-center gap-3 py-2 cursor-pointer'
+                            >
+                              <Avatar className='h-9 w-9'>
+                                <AvatarImage
+                                  src={getAvatarSrc(user.avatarUrl)}
+                                  alt={user.fullName}
+                                />
+                                <AvatarFallback
+                                  className={`${getAvatarColorClass(user.fullName)} text-xs text-white font-medium`}
+                                >
+                                  {getAvatarFallback(user.fullName)}
+                                </AvatarFallback>
+                              </Avatar>
+
+                              <div className='flex-1 min-w-0'>
+                                <p className='truncate text-sm font-semibold text-foreground'>
+                                  {user.fullName}
+                                </p>
+                                <p className='truncate text-xs text-muted-foreground'>
+                                  {user.email}
+                                </p>
+                                <p className='truncate text-xs text-slate-500'>
+                                  MSSV: {user.userCode || '-'}
+                                </p>
+                              </div>
+
+                              <Check
+                                className={cn(
+                                  'h-4 w-4 text-blue-600 transition-opacity',
+                                  isSelected ? 'opacity-100' : 'opacity-0'
+                                )}
+                              />
+                            </CommandItem>
+                          )
+                        })}
+                      </CommandGroup>
+                    )}
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div className='space-y-2'>
@@ -272,15 +347,16 @@ export default function AddMemberModal({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value='Member'>Member</SelectItem>
-                {/* Tạm thời bỏ disabled vì bây giờ chỉ thêm 1 người mỗi lần 
-                  disabled={selectedUsers.length > 1}
-                */}
-                <SelectItem value='Leader'>Leader</SelectItem>
+                <SelectItem value='Leader' disabled={selectedUsers.length > 1}>
+                  Leader
+                </SelectItem>
               </SelectContent>
             </Select>
-            {/* Tạm ẩn cảnh báo vì giờ chỉ nhập 1 ID 
-              {selectedUsers.length > 1 && (...)} 
-            */}
+            {selectedUsers.length > 1 && (
+              <p className='text-[13px] text-muted-foreground'>
+                Chỉ có thể chọn 1 người làm Leader. Đã chuyển quyền về Member.
+              </p>
+            )}
           </div>
         </div>
 
@@ -296,8 +372,7 @@ export default function AddMemberModal({
           <Button
             type='button'
             onClick={handleConfirm}
-            // Đổi điều kiện disabled: khóa nút nếu ô input rỗng
-            disabled={!quickUserId.trim() || isSubmitting}
+            disabled={selectedUsers.length === 0 || isSubmitting}
           >
             {isSubmitting ? (
               <>
@@ -305,8 +380,7 @@ export default function AddMemberModal({
                 Đang thêm...
               </>
             ) : (
-              // Sửa lại text cho phù hợp
-              'Thêm thành viên'
+              `Thêm ${selectedUsers.length > 0 ? selectedUsers.length : ''} thành viên`
             )}
           </Button>
         </DialogFooter>
