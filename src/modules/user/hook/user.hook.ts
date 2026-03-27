@@ -5,6 +5,7 @@ import {
   changeAvatarAPI,
   changePasswordAPI,
   getUserProfileAPI,
+  linkGithubAccountAPI,
   type ChangeAvatarPayload,
   type ChangePasswordPayload
 } from '../api/user.api'
@@ -86,5 +87,11 @@ export const useChangeAvatar = () => {
         description: message
       })
     }
+  })
+}
+
+export const useLinkGithubAccount = () => {
+  return useMutation({
+    mutationFn: (email: string) => linkGithubAccountAPI({ email })
   })
 }

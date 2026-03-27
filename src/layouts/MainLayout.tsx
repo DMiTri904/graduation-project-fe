@@ -78,7 +78,7 @@ export default function MainLayout({
         <Header />
 
         {/* 3. BOARD AREA (Nơi chứa Bảng kéo thả) */}
-        <div className='flex-1 overflow-x-hidden'>{children}</div>
+        <div className='flex-1 min-h-0 overflow-hidden'>{children}</div>
       </main>
     </div>
   )

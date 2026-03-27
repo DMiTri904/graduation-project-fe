@@ -26,6 +26,7 @@ import {
 import { useBoardStore } from '../stores/useBoardStore'
 import type { Card } from '../types/board'
 import { useDeleteTask, useUpdateTask } from '../hooks/useBoardHooks'
+import TaskCommentSection from '@/modules/comments/components/TaskCommentSection'
 import { getPriorityConfig, PRIORITY_OPTIONS } from '~/utils/priority'
 import { toast } from 'sonner'
 import { formatDueDateForSubmit } from '@/utils/boardFormatters'
@@ -34,7 +35,7 @@ import {
   User,
   Calendar,
   Flag,
-  Clock,
+  Loader2,
   MessageSquare,
   Paperclip,
   ListTodo,
@@ -75,6 +76,11 @@ export default function CardDetailSheet({
   const { mutateAsync: updateTaskMutateAsync, isPending: isUpdatingTask } =
     useUpdateTask(groupId)
   const { mutateAsync: deleteTaskMutateAsync } = useDeleteTask(groupId)
+
+  const activeGroupMembers = useMemo(
+    () => currentGroupMembers.filter(member => member.isActive !== false),
+    [currentGroupMembers]
+  )
 
   const [editForm, setEditForm] = useState<EditTaskFormState>({
     title: '',
@@ -125,7 +131,7 @@ export default function CardDetailSheet({
   useEffect(() => {
     if (!card) return
 
-    const matchedMember = currentGroupMembers.find(
+    const matchedMember = activeGroupMembers.find(
       member =>
         member.id === card.assignedTo || member.userId === card.assignedTo
     )
@@ -134,14 +140,10 @@ export default function CardDetailSheet({
       title: card.title || '',
       description: card.description || '',
       priority: card.priority || 'medium',
-      assignee: matchedMember
-        ? String(matchedMember.id)
-        : typeof card.assignedTo === 'number' && card.assignedTo > 0
-          ? String(card.assignedTo)
-          : 'unassigned',
+      assignee: matchedMember ? String(matchedMember.id) : 'unassigned',
       dueDate: toInputDate(card.dueDate)
     })
-  }, [card, currentGroupMembers])
+  }, [card, activeGroupMembers])
 
   if (!card || !board) return null
 
@@ -221,7 +223,7 @@ export default function CardDetailSheet({
     try {
       await updateTaskMutateAsync({ taskId, body: payload })
 
-      const selectedMember = currentGroupMembers.find(
+      const selectedMember = activeGroupMembers.find(
         member => String(member.id) === editForm.assignee
       )
 
@@ -264,10 +266,11 @@ export default function CardDetailSheet({
   return (
     <>
       <Sheet open={isOpen} onOpenChange={onClose}>
-        <SheetContent className='sm:max-w-3xl overflow-y-auto p-0'>
+        <SheetContent className='sm:max-w-4xl xl:max-w-5xl overflow-y-auto p-0'>
+          {/* Sticky header */}
           <div className='sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between z-10'>
             <div className='flex items-center gap-3 flex-1'>
-              <ListTodo className='h-5 w-5 text-slate-600' />
+              <ListTodo className='h-5 w-5 text-slate-500' />
               {isEditingTitle ? (
                 <Input
                   value={editForm.title}
@@ -277,12 +280,12 @@ export default function CardDetailSheet({
                   onBlur={handleTitleBlur}
                   onKeyDown={handleTitleKeyDown}
                   autoFocus
-                  className='text-xl font-semibold border-2 border-blue-500 flex-1'
+                  className='text-lg font-semibold border-2 border-blue-500 flex-1'
                 />
               ) : (
                 <h2
                   onClick={() => setIsEditingTitle(true)}
-                  className='text-xl font-semibold cursor-pointer hover:bg-slate-100 rounded px-2 py-1 -ml-2 transition-colors flex-1'
+                  className='text-lg font-semibold cursor-pointer hover:bg-slate-100 rounded px-2 py-1 -ml-2 transition-colors flex-1'
                 >
                   {editForm.title || 'Untitled'}
                 </h2>
@@ -300,11 +303,12 @@ export default function CardDetailSheet({
 
           <div className='px-6 py-6'>
             <div className='grid grid-cols-3 gap-6'>
-              <div className='col-span-2 space-y-6'>
+              {/* Left: main content */}
+              <div className='col-span-2 space-y-5'>
+                {/* Description */}
                 <div>
-                  <Label className='text-sm font-semibold mb-2 flex items-center gap-2'>
-                    <MessageSquare className='h-4 w-4' />
-                    Description
+                  <Label className='text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 block'>
+                    Mô tả
                   </Label>
                   {isEditingDescription ? (
                     <Textarea
@@ -316,79 +320,72 @@ export default function CardDetailSheet({
                         }))
                       }
                       onBlur={handleDescriptionBlur}
-                      placeholder='Add a more detailed description...'
+                      placeholder='Thêm mô tả chi tiết...'
                       autoFocus
-                      rows={8}
-                      className='resize-none border-2 border-blue-500 mt-2'
+                      rows={6}
+                      className='resize-none border-2 border-blue-500'
                     />
                   ) : (
                     <div
                       onClick={() => setIsEditingDescription(true)}
-                      className='min-h-30 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 cursor-pointer hover:bg-slate-100 transition-colors text-sm mt-2 whitespace-pre-wrap'
+                      className='min-h-20 rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5 cursor-pointer hover:bg-slate-100 transition-colors text-sm whitespace-pre-wrap'
                     >
                       {editForm.description || (
                         <span className='text-slate-400'>
-                          Add a more detailed description...
+                          Thêm mô tả chi tiết...
                         </span>
                       )}
                     </div>
                   )}
                 </div>
 
-                <div>
-                  <Label className='text-sm font-semibold mb-3 flex items-center gap-2'>
-                    <Clock className='h-4 w-4' />
-                    Activity
-                  </Label>
-                  <div className='space-y-3 mt-2'>
-                    {card.createdAt && (
-                      <div className='text-sm text-slate-600'>
-                        <span className='font-medium'>Created:</span>{' '}
-                        {formatDate(card.createdAt)}
-                      </div>
-                    )}
-                    {card.updatedAt && (
-                      <div className='text-sm text-slate-600'>
-                        <span className='font-medium'>Last updated:</span>{' '}
-                        {formatDate(card.updatedAt)}
-                      </div>
-                    )}
-                    <div className='flex items-center gap-4 text-sm text-slate-600 pt-2 border-t'>
-                      <div className='flex items-center gap-2'>
-                        <MessageSquare className='h-4 w-4' />
-                        <span>{card.comments?.length || 0} Comments</span>
-                      </div>
-                      <div className='flex items-center gap-2'>
-                        <Paperclip className='h-4 w-4' />
-                        <span>{card.attachments?.length || 0} Attachments</span>
-                      </div>
-                    </div>
-                  </div>
+                {/* Activity meta — compact */}
+                <div className='flex items-center gap-4 text-xs text-slate-400 py-2 border-t border-slate-100'>
+                  {card.createdAt && (
+                    <span>Tạo: {formatDate(card.createdAt)}</span>
+                  )}
+                  {card.updatedAt && (
+                    <span>Cập nhật: {formatDate(card.updatedAt)}</span>
+                  )}
+                  {/* <span className='flex items-center gap-1'>
+                    <MessageSquare className='h-3 w-3' />
+                    {card.comments?.length || 0}
+                  </span>
+                  <span className='flex items-center gap-1'>
+                    <Paperclip className='h-3 w-3' />
+                    {card.attachments?.length || 0}
+                  </span> */}
                 </div>
+
+                {/* Comments */}
+                {taskId > 0 && <TaskCommentSection taskId={taskId} />}
               </div>
 
-              <div className='space-y-6'>
+              {/* Right: sidebar */}
+              <div className='space-y-5'>
+                {/* Status */}
                 <div>
-                  <Label className='text-xs font-semibold text-slate-600 uppercase mb-2 block'>
-                    Status
+                  <Label className='text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 block'>
+                    Trạng thái
                   </Label>
                   {column && (
-                    <Badge variant='secondary' className='text-sm'>
+                    <Badge variant='secondary' className='text-xs'>
                       {column.title}
                     </Badge>
                   )}
                 </div>
 
+                {/* Priority */}
                 <div>
-                  <Label className='text-xs font-semibold text-slate-600 uppercase mb-2 flex items-center gap-1'>
+                  <Label className='text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-1'>
                     <Flag className='h-3 w-3' />
-                    Priority
+                    Ưu tiên
                   </Label>
                   <Select
                     value={editForm.priority}
                     onValueChange={handlePriorityChange}
                   >
-                    <SelectTrigger className='w-full'>
+                    <SelectTrigger className='w-full h-8 text-sm'>
                       <SelectValue>
                         <div className='flex items-center gap-2'>
                           {getPriorityConfig(editForm.priority).icon}
@@ -414,26 +411,26 @@ export default function CardDetailSheet({
                   </Select>
                 </div>
 
+                {/* Assignee */}
                 <div>
-                  <Label className='text-xs font-semibold text-slate-600 uppercase mb-2 flex items-center gap-1'>
+                  <Label className='text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-1'>
                     <User className='h-3 w-3' />
-                    Assignee
+                    Người thực hiện
                   </Label>
-                  <Input type='hidden' value={editForm.assignee} readOnly />
                   <Select
                     value={editForm.assignee}
                     onValueChange={handleAssigneeChange}
                   >
-                    <SelectTrigger className='w-full'>
-                      <SelectValue placeholder='Unassigned' />
+                    <SelectTrigger className='w-full h-8 text-sm'>
+                      <SelectValue placeholder='Chưa phân công' />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value='unassigned'>Unassigned</SelectItem>
-                      {currentGroupMembers.map(member => (
+                      <SelectItem value='unassigned'>Chưa phân công</SelectItem>
+                      {activeGroupMembers.map(member => (
                         <SelectItem key={member.id} value={String(member.id)}>
                           <div className='flex items-center gap-2 min-w-0'>
                             <span className='truncate'>{member.userName}</span>
-                            <span className='text-xs text-slate-500 truncate'>
+                            <span className='text-xs text-slate-400 truncate'>
                               {member.userCode}
                             </span>
                           </div>
@@ -443,52 +440,59 @@ export default function CardDetailSheet({
                   </Select>
                 </div>
 
+                {/* Reporter */}
                 {card.reporter && (
                   <div>
-                    <Label className='text-xs font-semibold text-slate-600 uppercase mb-2 flex items-center gap-1'>
+                    <Label className='text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-1'>
                       <User className='h-3 w-3' />
-                      Reporter
+                      Người báo cáo
                     </Label>
-                    <div className='text-sm text-slate-700 px-3 py-2 bg-slate-50 rounded-md'>
+                    <div className='text-sm text-slate-700 px-3 py-2 bg-slate-50 rounded-md border border-slate-200'>
                       {card.reporter}
                     </div>
                   </div>
                 )}
 
+                {/* Due date */}
                 <div>
-                  <Label className='text-xs font-semibold text-slate-600 uppercase mb-2 flex items-center gap-1'>
+                  <Label className='text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-1'>
                     <Calendar className='h-3 w-3' />
-                    Due Date
+                    Hạn hoàn thành
                   </Label>
                   <Input
                     type='date'
                     value={editForm.dueDate}
                     onChange={handleDueDateChange}
-                    className='text-sm'
+                    className='h-8 text-sm'
                   />
                 </div>
 
-                <div className='pt-4 border-t'>
-                  <Label className='text-xs font-semibold text-slate-600 uppercase mb-3 block'>
-                    Actions
-                  </Label>
+                {/* Actions */}
+                <div className='pt-4 border-t border-slate-100 space-y-2'>
                   <Button
                     variant='default'
                     size='sm'
                     onClick={handleUpdateTask}
-                    className='w-full justify-start mb-2 bg-blue-600 hover:bg-blue-700'
+                    className='w-full h-8 text-sm bg-blue-600 hover:bg-blue-700'
                     disabled={isUpdatingTask}
                   >
-                    {isUpdatingTask ? 'Đang lưu...' : 'Lưu thay đổi'}
+                    {isUpdatingTask ? (
+                      <>
+                        <Loader2 className='h-3.5 w-3.5 mr-2 animate-spin' />
+                        Đang lưu...
+                      </>
+                    ) : (
+                      'Lưu thay đổi'
+                    )}
                   </Button>
                   <Button
                     variant='destructive'
                     size='sm'
                     onClick={() => setShowDeleteDialog(true)}
-                    className='w-full justify-start'
+                    className='w-full h-8 text-sm'
                     disabled={isUpdatingTask}
                   >
-                    <Trash2 className='h-4 w-4 mr-2' />
+                    <Trash2 className='h-3.5 w-3.5 mr-2' />
                     Xóa công việc
                   </Button>
                 </div>

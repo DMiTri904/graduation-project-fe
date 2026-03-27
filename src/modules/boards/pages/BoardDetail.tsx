@@ -37,16 +37,18 @@ function Board() {
   })
 
   return (
-    <div className='h-screen w-full flex flex-col overflow-hidden'>
+    <div className='h-full min-h-0 w-full flex flex-col overflow-hidden'>
       {/* Fixed Board Header */}
-      <BoardBar
-        board={boardFromApi}
-        groupId={Number.isFinite(groupId) ? groupId : 0}
-        groupDetail={groupDetail}
-        isMyTasksOnly={isMyTasksOnly}
-        onMyTasksOnlyChange={setIsMyTasksOnly}
-        onClearFilters={() => setIsMyTasksOnly(false)}
-      />
+      <div className='shrink-0'>
+        <BoardBar
+          board={boardFromApi}
+          groupId={Number.isFinite(groupId) ? groupId : 0}
+          groupDetail={groupDetail}
+          isMyTasksOnly={isMyTasksOnly}
+          onMyTasksOnlyChange={setIsMyTasksOnly}
+          onClearFilters={() => setIsMyTasksOnly(false)}
+        />
+      </div>
 
       {/* Scrollable Board Content - takes remaining height */}
       <BoardContent board={boardFromApi} currentUserRole={currentUserRole} />

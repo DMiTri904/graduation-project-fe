@@ -48,6 +48,7 @@ export default function CreateCardDialog({
   const { mutateAsync: createTaskMutateAsync, isPending } =
     useCreateGroupTask(groupId)
   const { data: members = [] } = useGetGroupMemberOptions(groupId)
+  const activeMembers = members.filter(member => member.isActive !== false)
 
   // Form state
   const [title, setTitle] = useState('')
@@ -191,7 +192,7 @@ export default function CreateCardDialog({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value='0'>Unassigned</SelectItem>
-                  {members.map(member => (
+                  {activeMembers.map(member => (
                     <SelectItem
                       key={member.userId}
                       value={String(member.userId)}

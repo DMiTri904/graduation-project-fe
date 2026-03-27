@@ -1,4 +1,4 @@
-import type { MouseEvent } from 'react'
+import { useMemo, type MouseEvent } from 'react'
 import { User, CheckCircle2 } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
@@ -38,6 +38,11 @@ export default function CardAssigneePopover({
   onUnassign,
   onAssignToUser
 }: CardAssigneePopoverProps) {
+  const activeMembers = useMemo(
+    () => currentGroupMembers.filter(member => member.isActive !== false),
+    [currentGroupMembers]
+  )
+
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>
@@ -105,7 +110,7 @@ export default function CardAssigneePopover({
           <div className='h-px bg-slate-200 my-1' />
 
           <div className='max-h-48 overflow-y-auto space-y-0.5'>
-            {currentGroupMembers.map(member => (
+            {activeMembers.map(member => (
               <button
                 key={member.id}
                 className='w-full flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-slate-100 rounded transition-colors text-left'

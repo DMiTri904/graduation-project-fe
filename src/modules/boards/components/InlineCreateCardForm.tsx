@@ -53,7 +53,9 @@ export default function InlineCreateCardForm({
     useCreateGroupTask(groupId)
   const { data: members = [] } = useGetGroupMemberOptions(groupId)
 
-  const filteredMembers = members.filter(member => {
+  const activeMembers = members.filter(member => member.isActive !== false)
+
+  const filteredMembers = activeMembers.filter(member => {
     const keyword = assigneeKeyword.trim().toLowerCase()
     if (!keyword) return true
     return (
@@ -64,7 +66,7 @@ export default function InlineCreateCardForm({
 
   const hasAssignedUser = Number.isFinite(assignedTo)
   const selectedAssignee = hasAssignedUser
-    ? members.find(member => member.userId === assignedTo)
+    ? activeMembers.find(member => member.userId === assignedTo)
     : undefined
 
   const formattedDueDate = dueDate

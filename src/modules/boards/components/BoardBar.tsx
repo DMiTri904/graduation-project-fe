@@ -112,24 +112,29 @@ export default function BoardBar({
       )
   }, [membersResponse?.value])
 
+  const activeMembers = useMemo(
+    () => realMembers.filter(member => member.isActive !== false),
+    [realMembers]
+  )
+
   useEffect(() => {
-    setCurrentGroupMembers(realMembers)
-  }, [realMembers, setCurrentGroupMembers])
+    setCurrentGroupMembers(activeMembers)
+  }, [activeMembers, setCurrentGroupMembers])
   const MAX_VISIBLE_AVATARS = 3
-  const visibleMembers = realMembers.slice(0, MAX_VISIBLE_AVATARS)
+  const visibleMembers = activeMembers.slice(0, MAX_VISIBLE_AVATARS)
   const remainUsers =
-    realMembers.length > MAX_VISIBLE_AVATARS
-      ? realMembers.length - MAX_VISIBLE_AVATARS
+    activeMembers.length > MAX_VISIBLE_AVATARS
+      ? activeMembers.length - MAX_VISIBLE_AVATARS
       : 0
 
   const currentMember = useMemo(() => {
     if (!tokenUser.id) return null
     return (
-      realMembers.find(
+      activeMembers.find(
         member => member.userId === tokenUser.id || member.id === tokenUser.id
       ) || null
     )
-  }, [realMembers, tokenUser.id])
+  }, [activeMembers, tokenUser.id])
 
   const handleConfirmAddMember = async (payload: {
     userId: number
