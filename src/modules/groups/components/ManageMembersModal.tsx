@@ -55,6 +55,7 @@ interface Member {
   userCode?: string
   role?: string
   avatarUrl?: string | null
+  isActive?: boolean
 }
 
 interface GroupMembersResponse {
@@ -104,8 +105,13 @@ export default function ManageMembersModal({
       | GroupMembersResponse
       | Member[]
       | undefined
-    if (Array.isArray(payload)) return payload
-    return Array.isArray(payload?.value) ? payload.value : []
+    const rawMembers = Array.isArray(payload)
+      ? payload
+      : Array.isArray(payload?.value)
+        ? payload.value
+        : []
+
+    return rawMembers.filter(member => member.isActive !== false)
   }, [membersResponse])
 
   const closeConfirm = () => {

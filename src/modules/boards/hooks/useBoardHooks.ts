@@ -45,6 +45,7 @@ export interface GroupMemberOption {
   avatarUrl?: string
   role?: string
   email?: string
+  isActive?: boolean
 }
 
 type GroupMemberOptionLike = Partial<GroupMemberOption> & {
@@ -52,6 +53,7 @@ type GroupMemberOptionLike = Partial<GroupMemberOption> & {
   fullName?: string
   name?: string
   avatar?: string
+  isActive?: boolean
 }
 
 const normalizeMemberOption = (
@@ -76,7 +78,8 @@ const normalizeMemberOption = (
     userName,
     avatarUrl: member.avatarUrl || member.avatar,
     role: member.role,
-    email: member.email
+    email: member.email,
+    isActive: member.isActive ?? true
   }
 }
 
@@ -487,15 +490,20 @@ export const useCardAssignee = ({
   const { updateCard, currentGroupMembers, currentUser } = useBoardStore()
   const { mutateAsync: assignTaskMutateAsync } = useAssignTask(groupId)
 
-  const assignedUser = currentGroupMembers?.find(
+  const activeGroupMembers = useMemo(
+    () => currentGroupMembers.filter(member => member.isActive !== false),
+    [currentGroupMembers]
+  )
+
+  const assignedUser = activeGroupMembers?.find(
     member => member.id === card.assignedTo || member.userId === card.assignedTo
   )
 
   const currentUserMember = useMemo(() => {
-    if (!currentGroupMembers?.length) return null
+    if (!activeGroupMembers?.length) return null
 
     if (currentUser) {
-      const matchedByStore = currentGroupMembers.find(
+      const matchedByStore = activeGroupMembers.find(
         member =>
           member.id === currentUser.id ||
           member.userId === currentUser.id ||
@@ -512,7 +520,7 @@ export const useCardAssignee = ({
     const normalizedCode = (tokenUser.studentId || '').trim().toLowerCase()
 
     return (
-      currentGroupMembers.find(member => {
+      activeGroupMembers.find(member => {
         const memberName = (member.userName || '').trim().toLowerCase()
         const memberCode = (member.userCode || '').trim().toLowerCase()
 
@@ -522,7 +530,7 @@ export const useCardAssignee = ({
         )
       }) || null
     )
-  }, [currentGroupMembers, currentUser])
+  }, [activeGroupMembers, currentUser])
 
   const handleAssignToMe = async (
     event: MouseEvent,
@@ -576,7 +584,7 @@ export const useCardAssignee = ({
 
   return {
     assignedUser,
-    currentGroupMembers,
+    currentGroupMembers: activeGroupMembers,
     handleAssignToMe,
     handleAssignToUser,
     handleUnassign

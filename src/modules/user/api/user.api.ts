@@ -39,6 +39,14 @@ export interface SearchUserResponse {
   userName?: string
 }
 
+export interface LinkGithubPayload {
+  email: string
+}
+
+export interface LinkGithubResponse {
+  redirectUrl: string
+}
+
 const normalizeApiResponse = <T>(raw: any): ApiResponse<T> => {
   const isWrapped =
     raw &&
@@ -122,5 +130,22 @@ export const searchUsersAPI = async (
         userName: item?.userName || item?.name || item?.fullName || ''
       })
     )
-    .filter(user => user.id > 0 && !!user.email)
+    .filter((user: SearchUserResponse) => user.id > 0 && !!user.email)
+}
+
+export const linkGithubAccountAPI = async (
+  payload: LinkGithubPayload
+): Promise<LinkGithubResponse> => {
+  const { data } = await api.post('/auth/github/link', payload)
+
+  const redirectUrl =
+    data?.redirectUrl || data?.data?.redirectUrl || data?.value?.redirectUrl
+
+  if (!redirectUrl) {
+    throw new Error('Không nhận được đường dẫn chuyển hướng GitHub')
+  }
+
+  return {
+    redirectUrl
+  }
 }

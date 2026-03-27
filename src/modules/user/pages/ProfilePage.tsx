@@ -2,14 +2,15 @@ import { useMemo, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
-import { Loader2, Save } from 'lucide-react'
+import { Loader2, Save, Github } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { useUserProfile } from '../hook/user.hook'
+import { useLinkGithubAccount, useUserProfile } from '../hook/user.hook'
 import type { UserProfileResponse } from '../api/user.api'
 import { getCurrentUserFromToken } from '@/lib/token'
 import { getStoredAvatarUrl, withAvatarVersion } from '@/lib/avatar'
@@ -53,7 +54,10 @@ const mapProfileToForm = (
 })
 
 export default function ProfilePage() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const { data, isLoading, isError, dataUpdatedAt } = useUserProfile()
+  const { mutateAsync: linkGithubMutateAsync, isPending: isLinkingGithub } =
+    useLinkGithubAccount()
   const profileData = data?.data
   const tokenUser = useMemo(() => getCurrentUserFromToken(), [])
 
@@ -90,6 +94,45 @@ export default function ProfilePage() {
   useEffect(() => {
     reset(mapProfileToForm(profileData, tokenUser))
   }, [profileData, tokenUser, reset])
+
+  useEffect(() => {
+    const githubStatus = searchParams.get('github')
+    if (githubStatus !== 'success') return
+
+    toast.success('Liên kết tài khoản GitHub thành công!')
+
+    const nextParams = new URLSearchParams(searchParams)
+    nextParams.delete('github')
+    setSearchParams(nextParams, { replace: true })
+  }, [searchParams, setSearchParams])
+
+  const handleLinkGithub = async () => {
+    const currentEmail = profileData?.email || tokenUser.email || ''
+
+    if (!currentEmail) {
+      toast.error('Không tìm thấy email tài khoản hiện tại')
+      return
+    }
+
+    try {
+      const response = await linkGithubMutateAsync(currentEmail)
+      const redirectUrl = response?.redirectUrl
+
+      if (!redirectUrl) {
+        throw new Error('Không nhận được đường dẫn chuyển hướng GitHub')
+      }
+
+      window.location.href = redirectUrl
+    } catch (error: any) {
+      toast.error('Không thể liên kết GitHub', {
+        description:
+          error?.response?.data?.message ||
+          error?.response?.data?.error?.message ||
+          error?.message ||
+          'Vui lòng thử lại sau.'
+      })
+    }
+  }
 
   const onSubmit = async (values: ProfileFormValues) => {
     await new Promise(resolve => setTimeout(resolve, 400))
@@ -148,6 +191,21 @@ export default function ProfilePage() {
                 Student ID: {userMeta.studentId}
               </p>
             </div>
+
+            <Button
+              type='button'
+              variant='outline'
+              className='w-full gap-2'
+              onClick={handleLinkGithub}
+              disabled={isLinkingGithub}
+            >
+              {isLinkingGithub ? (
+                <Loader2 className='h-4 w-4 animate-spin' />
+              ) : (
+                <Github className='h-4 w-4' />
+              )}
+              {isLinkingGithub ? 'Đang chuyển hướng...' : 'Liên kết GitHub'}
+            </Button>
           </CardContent>
         </Card>
 

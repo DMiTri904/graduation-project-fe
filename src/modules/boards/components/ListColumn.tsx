@@ -17,12 +17,12 @@ function ListColumn({ columns }: ListColumnProps) {
       items={columns?.map(c => c._id)}
       strategy={horizontalListSortingStrategy}
     >
-      <div className='w-full h-full flex overflow-x-auto overflow-y-hidden'>
+      <div className='w-max h-full flex gap-5'>
         {columns?.map(column => (
           <ColumnItem key={column._id} column={column} />
         ))}
         {/* Add new column button */}
-        <div className='min-w-50 max-w-50 mx-4 rounded-lg h-fit bg-white/25'>
+        <div className='min-w-50 max-w-50 rounded-lg h-fit bg-white/25'>
           <Button
             variant='ghost'
             className='text-white w-full justify-start pl-4 py-2 hover:bg-white/30'

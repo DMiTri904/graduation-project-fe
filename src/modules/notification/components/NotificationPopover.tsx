@@ -6,6 +6,7 @@ import {
   PopoverContent,
   PopoverTrigger
 } from '@/components/ui/popover'
+import { formatDateTimeVi } from '@/lib/dayjs'
 import { cn } from '@/lib/utils'
 import {
   useGetNotifications,
@@ -24,18 +25,7 @@ const ScrollArea = ({ children, className }: ScrollAreaProps) => {
 }
 
 const formatNotificationTime = (createdAt?: string) => {
-  if (!createdAt) return ''
-
-  const date = new Date(createdAt)
-  if (Number.isNaN(date.getTime())) return ''
-
-  return date.toLocaleString('vi-VN', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
+  return formatDateTimeVi(createdAt)
 }
 
 interface NotificationItemProps {
@@ -95,7 +85,7 @@ export default function NotificationPopover() {
         >
           <Bell className='h-5 w-5' />
           {unreadCount > 0 && (
-            <Badge className='absolute -right-1 -top-1 h-5 min-w-5 rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white hover:bg-red-500'>
+            <Badge className='absolute justify-center items-center -right-1 -top-1 h-5 min-w-5 rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white hover:bg-red-500'>
               {unreadCount > 99 ? '99+' : unreadCount}
             </Badge>
           )}
