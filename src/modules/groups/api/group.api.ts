@@ -99,6 +99,31 @@ export const getGroupMembersAPI = async (groupId: number) => {
   return response.data
 }
 
+export interface UpdateGroupInfoRequest {
+  name: string
+  subjectOrProjectName: string
+}
+
+export const updateGroupInfoAPI = async (
+  groupId: number,
+  body: UpdateGroupInfoRequest
+) => {
+  const response = await api.put(`/group/${groupId}`, body)
+  return response.data
+}
+
+export interface UpdateGroupGithubRepoRequest {
+  repoUrl: string
+}
+
+export const updateGroupGithubRepoAPI = async (
+  groupId: number,
+  body: UpdateGroupGithubRepoRequest
+) => {
+  const response = await api.put(`/group/${groupId}/update-github-repo`, body)
+  return response.data
+}
+
 /**
  * Delete member from group
  * Endpoint: DELETE /api/group/{groupId}/member/{userId}
