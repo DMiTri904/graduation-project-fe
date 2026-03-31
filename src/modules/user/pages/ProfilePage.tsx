@@ -2,7 +2,7 @@ import { useMemo, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
-import { Loader2, Save, Github } from 'lucide-react'
+import { Loader2, Save, Github, CheckCircle2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -53,13 +53,30 @@ const mapProfileToForm = (
   major: profile?.major || profile?.specialization || ''
 })
 
+const extractProfileData = (raw: unknown): UserProfileResponse | undefined => {
+  if (!raw || typeof raw !== 'object') return undefined
+
+  const payload = raw as Record<string, unknown>
+  const candidate =
+    (payload.data as UserProfileResponse | undefined) ||
+    (payload.value as UserProfileResponse | undefined) ||
+    (payload as UserProfileResponse)
+
+  if (!candidate || typeof candidate !== 'object') return undefined
+
+  return candidate
+}
+
 export default function ProfilePage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { data, isLoading, isError, dataUpdatedAt } = useUserProfile()
   const { mutateAsync: linkGithubMutateAsync, isPending: isLinkingGithub } =
     useLinkGithubAccount()
-  const profileData = data?.data
+  const profileData = useMemo(() => extractProfileData(data), [data])
   const tokenUser = useMemo(() => getCurrentUserFromToken(), [])
+  const githubUsername = String(
+    profileData?.githubUsername || profileData?.githubUserName || ''
+  ).trim()
 
   const userMeta = useMemo(
     () => ({
@@ -192,20 +209,31 @@ export default function ProfilePage() {
               </p>
             </div>
 
-            <Button
-              type='button'
-              variant='outline'
-              className='w-full gap-2'
-              onClick={handleLinkGithub}
-              disabled={isLinkingGithub}
-            >
-              {isLinkingGithub ? (
-                <Loader2 className='h-4 w-4 animate-spin' />
-              ) : (
-                <Github className='h-4 w-4' />
-              )}
-              {isLinkingGithub ? 'Đang chuyển hướng...' : 'Liên kết GitHub'}
-            </Button>
+            {githubUsername ? (
+              <div className='w-full rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-left opacity-90'>
+                <div className='flex items-center gap-2'>
+                  <CheckCircle2 className='h-4 w-4 shrink-0 text-emerald-600' />
+                  <span className='text-sm font-medium text-emerald-800'>
+                    {githubUsername}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <Button
+                type='button'
+                variant='outline'
+                className='w-full gap-2'
+                onClick={handleLinkGithub}
+                disabled={isLinkingGithub}
+              >
+                {isLinkingGithub ? (
+                  <Loader2 className='h-4 w-4 animate-spin' />
+                ) : (
+                  <Github className='h-4 w-4' />
+                )}
+                {isLinkingGithub ? 'Đang chuyển hướng...' : 'Liên kết GitHub'}
+              </Button>
+            )}
           </CardContent>
         </Card>
 

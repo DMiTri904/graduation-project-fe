@@ -8,7 +8,11 @@ import {
   addMemberToGroupAPI,
   deleteGroupMemberAPI,
   getGroupDetailAPI,
-  getGroupMembersAPI
+  getGroupMembersAPI,
+  updateGroupInfoAPI,
+  updateGroupGithubRepoAPI,
+  type UpdateGroupInfoRequest,
+  type UpdateGroupGithubRepoRequest
 } from '../api/group.api'
 import type { JoinGroupPayload } from '../types/group'
 import type {
@@ -185,6 +189,59 @@ export const useDeleteGroupMember = (groupId: number) => {
           }
         }
       )
+    }
+  })
+}
+
+export const useUpdateGroupInfo = (groupId: number) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (body: UpdateGroupInfoRequest) =>
+      updateGroupInfoAPI(groupId, body),
+    onSuccess: () => {
+      toast.success('Thành công', {
+        description: 'Đã cập nhật thông tin nhóm.'
+      })
+
+      queryClient.invalidateQueries({
+        queryKey: groupKeys.detail(groupId.toString())
+      })
+      queryClient.invalidateQueries({ queryKey: groupKeys.lists() })
+    },
+    onError: (error: any) => {
+      toast.error('Thất bại', {
+        description:
+          error?.response?.data?.error?.message ||
+          error?.response?.data?.message ||
+          'Không thể cập nhật thông tin nhóm. Vui lòng thử lại.'
+      })
+    }
+  })
+}
+
+export const useUpdateGroupGithubRepo = (groupId: number) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (body: UpdateGroupGithubRepoRequest) =>
+      updateGroupGithubRepoAPI(groupId, body),
+    onSuccess: () => {
+      toast.success('Thành công', {
+        description: 'Đã cập nhật link GitHub repository.'
+      })
+
+      queryClient.invalidateQueries({
+        queryKey: groupKeys.detail(groupId.toString())
+      })
+    },
+    onError: (error: any) => {
+      toast.error('Thất bại', {
+        description:
+          error?.response?.data?.error?.message ||
+          error?.response?.data?.message ||
+          'Không thể cập nhật link GitHub repository. Vui lòng thử lại.'
+      })
     }
   })
 }

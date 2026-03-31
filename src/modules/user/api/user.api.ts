@@ -16,6 +16,8 @@ export interface UserProfileResponse {
   userCode?: string
   avatarUrl?: string
   avatar?: string
+  githubUsername?: string
+  githubUserName?: string
 }
 
 export interface ChangePasswordPayload {
