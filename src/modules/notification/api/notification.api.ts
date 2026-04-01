@@ -1,20 +1,10 @@
 import api from '@/lib/axios'
 
-// export interface NotificationDto {
-//   id: number
-//   content: string
-//   isRead: boolean
-//   createdAt: string
-//   type?: 'TASK_ASSIGN' | 'GROUP_INVITE' | 'COMMENT' | string
-//   groupId?: number | string | null
-//   taskId?: number | string | null
-//   title?: string
-//   link?: string
-// }
-
 export interface NotificationDto {
   id: number
   content: string
+  title?: string
+  body?: string | null
   isRead: boolean
   createdAt: string
   groupId?: number | string | null
@@ -28,13 +18,65 @@ interface NotificationListResponse {
   data?: NotificationDto[]
 }
 
+type RawNotification = Partial<NotificationDto> & {
+  id?: number | string
+  title?: string
+  body?: string | null
+  content?: string
+  isRead?: boolean
+  createdAt?: string
+  groupId?: number | string | null
+  relatedEntityId?: number | string | null
+  relatedEntityType?: string
+}
+
+const normalizeNotificationItem = (
+  item: RawNotification
+): NotificationDto | null => {
+  const id = Number(item?.id)
+  if (!Number.isFinite(id) || id <= 0) return null
+
+  const title = item?.title?.trim() || ''
+  const body = typeof item?.body === 'string' ? item.body : (item?.body ?? null)
+  const content =
+    item?.content?.trim() ||
+    title ||
+    (typeof body === 'string' ? body : '') ||
+    'Thông báo mới'
+
+  return {
+    id,
+    content,
+    title,
+    body,
+    isRead: Boolean(item?.isRead),
+    createdAt: item?.createdAt || '',
+    groupId: item?.groupId,
+    relatedEntityId: item?.relatedEntityId,
+    relatedEntityType: item?.relatedEntityType
+  }
+}
+
 const normalizeNotifications = (payload: unknown): NotificationDto[] => {
-  if (Array.isArray(payload)) return payload as NotificationDto[]
+  if (Array.isArray(payload)) {
+    return payload
+      .map(item => normalizeNotificationItem(item as RawNotification))
+      .filter((item): item is NotificationDto => item !== null)
+  }
 
   const response = payload as NotificationListResponse | null | undefined
 
-  if (Array.isArray(response?.value)) return response.value
-  if (Array.isArray(response?.data)) return response.data
+  if (Array.isArray(response?.value)) {
+    return response.value
+      .map(item => normalizeNotificationItem(item as RawNotification))
+      .filter((item): item is NotificationDto => item !== null)
+  }
+
+  if (Array.isArray(response?.data)) {
+    return response.data
+      .map(item => normalizeNotificationItem(item as RawNotification))
+      .filter((item): item is NotificationDto => item !== null)
+  }
 
   return []
 }

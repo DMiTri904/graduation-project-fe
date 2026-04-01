@@ -209,6 +209,10 @@ export default function BoardBar({
           onClose={() => setIsInviteModalOpen(false)}
           groupId={resolvedGroupId}
           groupName={groupDetail?.name}
+          currentUserId={Number(tokenUser.id)}
+          existingMemberIds={activeMembers
+            .map(member => Number(member.userId ?? member.id))
+            .filter(id => Number.isFinite(id) && id > 0)}
           onConfirm={handleConfirmAddMember}
         />
       </div>

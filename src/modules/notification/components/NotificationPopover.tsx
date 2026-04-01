@@ -39,6 +39,9 @@ const NotificationItem = ({
   onClick,
   disabled
 }: NotificationItemProps) => {
+  const displayTitle = notification.title || notification.content
+  const displayBody = notification.body || ''
+
   return (
     <button
       type='button'
@@ -51,12 +54,17 @@ const NotificationItem = ({
     >
       <div className='flex items-start justify-between gap-3'>
         <p className='text-sm font-medium text-slate-800 line-clamp-2'>
-          {notification.content}
+          {displayTitle}
         </p>
         {!notification.isRead && (
           <span className='mt-1 h-2 w-2 shrink-0 rounded-full bg-blue-600' />
         )}
       </div>
+      {displayBody && (
+        <p className='mt-1 text-xs text-slate-600 line-clamp-2'>
+          {displayBody}
+        </p>
+      )}
       <p className='mt-1 text-xs text-slate-500'>
         {formatNotificationTime(notification.createdAt)}
       </p>
