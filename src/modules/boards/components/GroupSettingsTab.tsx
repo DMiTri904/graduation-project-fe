@@ -15,6 +15,7 @@ interface GroupDetailLike {
   name?: string
   subjectOrProjectName?: string
   repoUrl?: string
+  githubRepoUrl?: string
 }
 
 interface GroupSettingsTabProps {
@@ -53,9 +54,12 @@ export default function GroupSettingsTab({
   useEffect(() => {
     if (!groupDetail) return
 
+    const resolvedRepoUrl =
+      groupDetail.githubRepoUrl || groupDetail.repoUrl || ''
+
     setGroupName(groupDetail.name || '')
     setSubjectOrProjectName(groupDetail.subjectOrProjectName || '')
-    setRepoUrl(groupDetail.repoUrl || '')
+    setRepoUrl(resolvedRepoUrl)
   }, [groupDetail])
 
   const handleSaveGroupInfo = async () => {

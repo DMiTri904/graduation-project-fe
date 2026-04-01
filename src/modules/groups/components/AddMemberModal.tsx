@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Loader2, UserPlus, Check, Search, X } from 'lucide-react'
 import {
   Dialog,
@@ -56,6 +56,8 @@ interface AddMemberModalProps {
   onClose: () => void
   groupId: number
   groupName?: string
+  currentUserId?: number
+  existingMemberIds?: number[]
   onConfirm?: (payload: AddMemberPayload) => Promise<void> | void
 }
 
@@ -64,6 +66,8 @@ export default function AddMemberModal({
   onClose,
   groupId,
   groupName,
+  currentUserId,
+  existingMemberIds,
   onConfirm
 }: AddMemberModalProps) {
   const [openCombobox, setOpenCombobox] = useState(false)
@@ -73,6 +77,9 @@ export default function AddMemberModal({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [users, setUsers] = useState<User[]>([])
   const [isSearching, setIsSearching] = useState(false)
+  const triggerRef = useRef<HTMLDivElement | null>(null)
+  const dropdownRef = useRef<HTMLDivElement | null>(null)
+  const inputRef = useRef<HTMLInputElement | null>(null)
 
   const debouncedSearch = useDebounce(searchValue, 450)
 
@@ -86,6 +93,12 @@ export default function AddMemberModal({
       setIsSearching(false)
     }
   }, [isOpen])
+
+  useEffect(() => {
+    if (searchValue.trim().length === 0) {
+      setOpenCombobox(false)
+    }
+  }, [searchValue])
 
   useEffect(() => {
     let isMounted = true
@@ -128,26 +141,67 @@ export default function AddMemberModal({
     }
   }, [selectedUsers, selectedRole])
 
+  const excludedUserIds = useMemo(() => {
+    const excluded = new Set<number>()
+
+    if (Number.isFinite(currentUserId)) {
+      excluded.add(Number(currentUserId))
+    }
+
+    if (Array.isArray(existingMemberIds)) {
+      existingMemberIds
+        .map(id => Number(id))
+        .filter(id => Number.isFinite(id) && id > 0)
+        .forEach(id => excluded.add(id))
+    }
+
+    selectedUsers
+      .map(user => Number(user.id))
+      .filter(id => Number.isFinite(id) && id > 0)
+      .forEach(id => excluded.add(id))
+
+    return excluded
+  }, [currentUserId, existingMemberIds, selectedUsers])
+
+  const filteredUsers = useMemo(() => {
+    return users.filter(user => {
+      const userId = Number(user.id)
+      if (!Number.isFinite(userId) || userId <= 0) return false
+      return !excludedUserIds.has(userId)
+    })
+  }, [excludedUserIds, users])
+
   const hasNoResult = useMemo(() => {
     return (
-      debouncedSearch.trim().length > 0 && !isSearching && users.length === 0
+      debouncedSearch.trim().length > 0 &&
+      !isSearching &&
+      filteredUsers.length === 0
     )
-  }, [debouncedSearch, isSearching, users])
+  }, [debouncedSearch, filteredUsers.length, isSearching])
 
   const toggleSelectUser = (user: User) => {
     setSelectedUsers(prev => {
       const isSelected = prev.some(u => u.id === user.id)
       if (isSelected) {
-        return prev.filter(u => u.id !== user.id)
+        return prev
       }
       return [...prev, user]
     })
-    setSearchValue('')
+    setOpenCombobox(true)
+    requestAnimationFrame(() => {
+      inputRef.current?.focus()
+    })
   }
 
   const removeSelectedUser = (id: number, e: React.MouseEvent) => {
     e.stopPropagation()
     setSelectedUsers(prev => prev.filter(u => u.id !== id))
+    if (searchValue.trim().length > 0) {
+      setOpenCombobox(true)
+    }
+    requestAnimationFrame(() => {
+      inputRef.current?.focus()
+    })
   }
 
   const handleClose = () => {
@@ -211,6 +265,7 @@ export default function AddMemberModal({
             <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
               <PopoverTrigger asChild>
                 <div
+                  ref={triggerRef}
                   className={cn(
                     'flex min-h-10 w-full flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 cursor-text',
                     isSubmitting && 'opacity-50 cursor-not-allowed'
@@ -239,6 +294,7 @@ export default function AddMemberModal({
                     )}
                     <input
                       id='member-search'
+                      ref={inputRef}
                       className='flex-1 bg-transparent outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed'
                       placeholder={
                         selectedUsers.length === 0
@@ -252,15 +308,46 @@ export default function AddMemberModal({
                         setSearchValue(e.target.value)
                         setOpenCombobox(true)
                       }}
+                      onFocus={() => {
+                        if (!isSubmitting) setOpenCombobox(true)
+                      }}
+                      onBlur={() => {
+                        requestAnimationFrame(() => {
+                          const activeElement =
+                            document.activeElement as Node | null
+
+                          const inTrigger =
+                            !!activeElement &&
+                            triggerRef.current?.contains(activeElement)
+                          const inDropdown =
+                            !!activeElement &&
+                            dropdownRef.current?.contains(activeElement)
+
+                          if (!inTrigger && !inDropdown) {
+                            setSearchValue('')
+                            setOpenCombobox(false)
+                          }
+                        })
+                      }}
                     />
                   </div>
                 </div>
               </PopoverTrigger>
 
               <PopoverContent
+                ref={dropdownRef}
                 className='w-(--radix-popover-trigger-width) p-0'
                 align='start'
                 onOpenAutoFocus={e => e.preventDefault()}
+                onInteractOutside={event => {
+                  const target = event.target as Node | null
+                  if (target && triggerRef.current?.contains(target)) {
+                    event.preventDefault()
+                    return
+                  }
+                  setSearchValue('')
+                  setOpenCombobox(false)
+                }}
               >
                 <Command>
                   <CommandList>
@@ -277,13 +364,13 @@ export default function AddMemberModal({
                       </div>
                     )}
 
-                    {!isSearching && users.length > 0 && (
+                    {!isSearching && filteredUsers.length > 0 && (
                       <CommandGroup>
                         <div className='px-2 py-1.5 text-xs font-medium text-muted-foreground'>
                           Kết quả tìm kiếm
                         </div>
 
-                        {users.map(user => {
+                        {filteredUsers.map(user => {
                           const isSelected = selectedUsers.some(
                             u => u.id === user.id
                           )
