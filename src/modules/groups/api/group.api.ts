@@ -99,6 +99,29 @@ export const getGroupMembersAPI = async (groupId: number) => {
   return response.data
 }
 
+export const deactivateGroupAPI = async (groupId: number) => {
+  const response = await api.put(`/group/${groupId}/deactivate`)
+  return response.data
+}
+
+export const reactiveGroupAPI = async (groupId: number) => {
+  const response = await api.put(`/group/${groupId}/reactive`)
+  return response.data
+}
+
+export interface UpdateGroupMemberRoleRequest {
+  newRole: 'Leader' | 'Member'
+}
+
+export const updateGroupMemberRoleAPI = async (
+  groupId: number,
+  userId: number,
+  body: UpdateGroupMemberRoleRequest
+) => {
+  const response = await api.put(`/group/${groupId}/members/${userId}`, body)
+  return response.data
+}
+
 export interface UpdateGroupInfoRequest {
   name: string
   subjectOrProjectName: string

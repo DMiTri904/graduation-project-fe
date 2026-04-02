@@ -1,5 +1,3 @@
-import { Plus } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import ColumnItem from './Column'
 import {
   SortableContext,
@@ -17,20 +15,10 @@ function ListColumn({ columns }: ListColumnProps) {
       items={columns?.map(c => c._id)}
       strategy={horizontalListSortingStrategy}
     >
-      <div className='w-max h-full flex gap-5'>
+      <div className='grid w-full grid-cols-4 gap-4 min-w-0'>
         {columns?.map(column => (
           <ColumnItem key={column._id} column={column} />
         ))}
-        {/* Add new column button */}
-        <div className='min-w-50 max-w-50 rounded-lg h-fit bg-white/25'>
-          <Button
-            variant='ghost'
-            className='text-white w-full justify-start pl-4 py-2 hover:bg-white/30'
-          >
-            <Plus className='mr-2 h-4 w-4' />
-            Add new column
-          </Button>
-        </div>
       </div>
     </SortableContext>
   )

@@ -49,26 +49,34 @@ function Column({ column }: ColumnProps) {
   }
 
   const orderedCards = mapOrder(column?.cards, column?.cardOrderIds, '_id')
+  const normalizedColumnId = String(column._id || '')
+    .trim()
+    .toLowerCase()
+  const normalizedColumnTitle = String(column.title || '')
+    .trim()
+    .toLowerCase()
+  const isTodoColumn =
+    normalizedColumnId === 'todo' || normalizedColumnTitle === 'to do'
 
   return (
     <div
       ref={setNodeRef}
       style={dndKitColumnStyles}
       {...attributes}
-      className='h-full' // Wrapper ngoài cùng
+      className='h-full min-w-0' // Wrapper ngoài cùng
     >
       {/* BỎ {...listeners} Ở ĐÂY ĐI. 
         Thêm max-h-full để cột không bao giờ cao vượt quá Container cha.
       */}
-      <div className='min-w-75 max-w-75 bg-slate-100 dark:bg-slate-800 rounded-lg max-h-full flex flex-col'>
+      <div className='w-full min-w-0 bg-slate-100 dark:bg-slate-800 rounded-lg max-h-full flex flex-col'>
         {/* Column Header - Fixed 
             CHUYỂN {...listeners} VÀO ĐÂY: Chỉ khi user nắm vào Header mới cho kéo Cột đi.
         */}
         <div
           {...listeners}
-          className='shrink-0 h-12.5 p-4 flex items-center justify-between border-b border-slate-200 dark:border-slate-700 cursor-grab active:cursor-grabbing'
+          className='shrink-0 h-11 px-3 py-2 flex items-center justify-between border-b border-slate-200 dark:border-slate-700 cursor-grab active:cursor-grabbing'
         >
-          <h3 className='text-base font-bold'>{column.title}</h3>
+          <h3 className='text-sm font-bold truncate'>{column.title}</h3>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -99,14 +107,15 @@ function Column({ column }: ColumnProps) {
 
         {/* VÙNG CHỨA LIST CARD CẦN PHẢI CUỘN - MAGIC LÀ Ở ĐÂY */}
         {/* flex-1: Chiếm phần diện tích còn lại. min-h-0: Ngăn thẻ div tự phình to. overflow-y-auto: Hiển thị thanh cuộn */}
-        <div className='flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-2'>
+        <div className='flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-1.5'>
           <ListCards cards={orderedCards} />
         </div>
 
-        {/* Column Footer - Fixed at bottom */}
-        <div className='shrink-0 p-2 border-t border-slate-200 dark:border-slate-700'>
-          <AddCardInline columnId={column._id} boardId={column.boardId} />
-        </div>
+        {isTodoColumn && (
+          <div className='shrink-0 p-1.5 border-t border-slate-200 dark:border-slate-700'>
+            <AddCardInline columnId={column._id} boardId={column.boardId} />
+          </div>
+        )}
       </div>
     </div>
   )

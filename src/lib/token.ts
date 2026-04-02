@@ -4,6 +4,7 @@ export interface TokenUserInfo {
   email?: string
   studentId?: string
   avatarUrl?: string
+  systemRole?: string
 }
 
 const parseJwtPayload = (token: string): Record<string, any> | null => {
@@ -85,6 +86,12 @@ export const getCurrentUserFromToken = (): TokenUserInfo => {
       'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'
     ]),
     studentId: claim(payload, ['studentId', 'mssv', 'student_code', 'sub']),
-    avatarUrl: claim(payload, ['avatarUrl', 'avatar', 'picture'])
+    avatarUrl: claim(payload, ['avatarUrl', 'avatar', 'picture']),
+    systemRole: claim(payload, [
+      'systemRole',
+      'userRole',
+      'role',
+      'http://schemas.microsoft.com/ws/2008/06/identity/claims/role'
+    ])
   }
 }

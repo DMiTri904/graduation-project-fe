@@ -21,8 +21,16 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
+import {
   useDeleteGroupMember,
-  useGetGroupMembers
+  useGetGroupMembers,
+  useUpdateGroupMemberRole
 } from '@/modules/groups/hooks/useGroups'
 import { useToast } from '@/hooks/use-toast'
 import {
@@ -33,18 +41,14 @@ import {
 
 type IdValue = string | number
 
-interface CurrentUser {
-  id?: IdValue
-  userId?: IdValue
-  role?: string
-}
-
 interface ManageMembersModalProps {
   groupId: IdValue
-  currentUser: CurrentUser
+  currentUserId: IdValue
+  currentUserRole: string
   isOpen?: boolean
   onClose?: () => void
   trigger?: ReactNode
+  onRoleUpdated?: () => void | Promise<void>
 }
 
 interface Member {
@@ -82,23 +86,33 @@ const resolveMemberName = (member: Member) => {
 
 export default function ManageMembersModal({
   groupId,
-  currentUser,
+  currentUserId,
+  currentUserRole,
   isOpen,
   onClose,
-  trigger
+  trigger,
+  onRoleUpdated
 }: ManageMembersModalProps) {
   const { success, error } = useToast()
 
   const normalizedGroupId = getNumericId(groupId)
-  const currentUserId = getNumericId(currentUser.userId ?? currentUser.id)
-  const isLeader = (currentUser.role || '').trim().toLowerCase() === 'leader'
+  const normalizedCurrentUserId = getNumericId(currentUserId)
+  const normalizedCurrentUserRole = (currentUserRole || '').trim().toLowerCase()
+  const isLeader = normalizedCurrentUserRole === 'leader'
+  const canManageRole =
+    normalizedCurrentUserRole === 'leader' ||
+    normalizedCurrentUserRole === 'giangvien'
 
   const [memberToDelete, setMemberToDelete] = useState<Member | null>(null)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+  const [updatingRoleUserId, setUpdatingRoleUserId] = useState<number | null>(
+    null
+  )
 
   const { data: membersResponse, isLoading } =
     useGetGroupMembers(normalizedGroupId)
   const deleteMemberMutation = useDeleteGroupMember(normalizedGroupId)
+  const updateMemberRoleMutation = useUpdateGroupMemberRole(normalizedGroupId)
 
   const members = useMemo(() => {
     const payload = membersResponse as
@@ -150,8 +164,41 @@ export default function ManageMembersModal({
 
   const canShowRemoveButton = (member: Member) => {
     const memberUserId = resolveMemberId(member)
-    const isCurrentUser = memberUserId === currentUserId
+    const isCurrentUser = memberUserId === normalizedCurrentUserId
     return isLeader && !isCurrentUser
+  }
+
+  const handleChangeMemberRole = async (
+    member: Member,
+    newRole: 'Leader' | 'Member'
+  ) => {
+    const memberUserId = resolveMemberId(member)
+    if (memberUserId <= 0 || normalizedGroupId <= 0) return
+
+    try {
+      setUpdatingRoleUserId(memberUserId)
+      await updateMemberRoleMutation.mutateAsync({
+        userId: memberUserId,
+        body: { newRole }
+      })
+
+      success({
+        title: 'Cập nhật vai trò thành công',
+        description: 'Vai trò thành viên đã được cập nhật.'
+      })
+
+      await onRoleUpdated?.()
+    } catch (err: any) {
+      error({
+        title: 'Cập nhật vai trò thất bại',
+        description:
+          err?.response?.data?.message ||
+          err?.message ||
+          'Vui lòng thử lại sau.'
+      })
+    } finally {
+      setUpdatingRoleUserId(null)
+    }
   }
 
   const isControlled = typeof isOpen === 'boolean'
@@ -196,7 +243,11 @@ export default function ManageMembersModal({
               {!isLoading &&
                 members.map(member => {
                   const displayName = resolveMemberName(member)
-                  const memberRole = member.role || 'Member'
+                  const memberRole =
+                    member.role === 'Leader' ? 'Leader' : 'Member'
+                  const memberUserId = resolveMemberId(member)
+                  const isSelf = memberUserId === normalizedCurrentUserId
+                  const isUpdatingRole = updatingRoleUserId === memberUserId
 
                   return (
                     <div
@@ -229,9 +280,34 @@ export default function ManageMembersModal({
                       </div>
 
                       <div className='flex items-center gap-2'>
-                        <span className='rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600'>
-                          {memberRole}
-                        </span>
+                        {canManageRole ? (
+                          <Select
+                            value={memberRole}
+                            onValueChange={value =>
+                              handleChangeMemberRole(
+                                member,
+                                value as 'Leader' | 'Member'
+                              )
+                            }
+                            disabled={
+                              isSelf ||
+                              isUpdatingRole ||
+                              updateMemberRoleMutation.isPending
+                            }
+                          >
+                            <SelectTrigger className='h-8 w-30 text-xs'>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value='Leader'>Leader</SelectItem>
+                              <SelectItem value='Member'>Member</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <span className='rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600'>
+                            {memberRole}
+                          </span>
+                        )}
 
                         {canShowRemoveButton(member) && (
                           <Button

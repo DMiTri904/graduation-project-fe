@@ -161,10 +161,8 @@ export default function BoardBar({
 
         <ManageMembersModal
           groupId={resolvedGroupId}
-          currentUser={{
-            id: tokenUser.id,
-            role: currentMember?.role || 'Member'
-          }}
+          currentUserId={tokenUser.id ?? 0}
+          currentUserRole={currentMember?.role || 'Member'}
           trigger={
             <div className='flex items-center -space-x-2 rounded-md px-1.5 py-1 cursor-pointer transition-all hover:bg-slate-100 hover:shadow-sm'>
               {visibleMembers.map(user => (

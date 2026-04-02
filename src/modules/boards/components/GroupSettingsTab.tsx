@@ -6,7 +6,9 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import {
+  useDeactivateGroup,
   useDeleteGroup,
+  useReactiveGroup,
   useUpdateGroupGithubRepo,
   useUpdateGroupInfo
 } from '@/modules/groups/hooks/useGroups'
@@ -16,21 +18,28 @@ interface GroupDetailLike {
   subjectOrProjectName?: string
   repoUrl?: string
   githubRepoUrl?: string
+  isActive?: boolean
 }
 
 interface GroupSettingsTabProps {
   groupId: number
   groupDetail?: GroupDetailLike
-  currentUserRole: 'Leader' | 'Member' | string
+  groupRole: 'Leader' | 'Member' | string
+  systemRole: string
+  reloadGroupData?: () => Promise<void> | void
 }
 
 export default function GroupSettingsTab({
   groupId,
   groupDetail,
-  currentUserRole
+  groupRole,
+  systemRole,
+  reloadGroupData
 }: GroupSettingsTabProps) {
   const navigate = useNavigate()
-  const isLeader = currentUserRole === 'Leader'
+  const isLeader = groupRole === 'Leader'
+  const canManageActiveStatus =
+    groupRole === 'Leader' || systemRole === 'Teacher'
 
   const [groupName, setGroupName] = useState('')
   const [subjectOrProjectName, setSubjectOrProjectName] = useState('')
@@ -48,8 +57,12 @@ export default function GroupSettingsTab({
     mutateAsync: updateGithubRepoMutateAsync,
     isPending: isUpdatingGithubRepo
   } = useUpdateGroupGithubRepo(groupId)
+  const { mutateAsync: deactivateGroupMutateAsync } =
+    useDeactivateGroup(groupId)
+  const { mutateAsync: reactiveGroupMutateAsync } = useReactiveGroup(groupId)
   const { mutateAsync: deleteGroupMutateAsync, isPending: isDeletingGroup } =
     useDeleteGroup()
+  const [isUpdatingActiveStatus, setIsUpdatingActiveStatus] = useState(false)
 
   useEffect(() => {
     if (!groupDetail) return
@@ -156,6 +169,41 @@ export default function GroupSettingsTab({
       toast.success('Đã copy link GitHub')
     } catch {
       toast.error('Không thể copy link. Vui lòng thử lại.')
+    }
+  }
+
+  const handleToggleActiveStatus = async () => {
+    if (!canManageActiveStatus || groupId <= 0) return
+
+    const isActive = groupDetail?.isActive !== false
+
+    if (isActive) {
+      const isConfirmed = window.confirm(
+        'Bạn có chắc chắn muốn khóa nhóm? Mọi thành viên sẽ không thể chỉnh sửa task.'
+      )
+      if (!isConfirmed) return
+    }
+
+    try {
+      setIsUpdatingActiveStatus(true)
+
+      if (isActive) {
+        await deactivateGroupMutateAsync()
+        toast.success('Đã vô hiệu hóa nhóm thành công!')
+      } else {
+        await reactiveGroupMutateAsync()
+        toast.success('Đã kích hoạt lại nhóm thành công!')
+      }
+
+      await reloadGroupData?.()
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.error?.message ||
+          error?.response?.data?.message ||
+          'Không thể cập nhật trạng thái nhóm. Vui lòng thử lại.'
+      )
+    } finally {
+      setIsUpdatingActiveStatus(false)
     }
   }
 
@@ -316,6 +364,39 @@ export default function GroupSettingsTab({
               Xóa nhóm
             </Button>
           </div>
+        )}
+
+        {canManageActiveStatus && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Trạng thái hoạt động nhóm</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {groupDetail?.isActive !== false ? (
+                <Button
+                  type='button'
+                  className='bg-red-600 text-white hover:bg-red-700'
+                  disabled={isUpdatingActiveStatus || groupId <= 0}
+                  onClick={handleToggleActiveStatus}
+                >
+                  {isUpdatingActiveStatus
+                    ? 'Đang xử lý...'
+                    : 'Vô hiệu hóa nhóm'}
+                </Button>
+              ) : (
+                <Button
+                  type='button'
+                  className='bg-green-600 text-white hover:bg-green-700'
+                  disabled={isUpdatingActiveStatus || groupId <= 0}
+                  onClick={handleToggleActiveStatus}
+                >
+                  {isUpdatingActiveStatus
+                    ? 'Đang xử lý...'
+                    : 'Kích hoạt lại nhóm'}
+                </Button>
+              )}
+            </CardContent>
+          </Card>
         )}
       </div>
 

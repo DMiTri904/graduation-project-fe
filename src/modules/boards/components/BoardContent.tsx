@@ -444,9 +444,8 @@ function BoardContent({
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      {/* Board Content Container - horizontal scroll for columns */}
-      <div className='bg-slate-50 dark:bg-slate-900 w-full flex-1 min-h-0 overflow-auto p-6'>
-        <div className='min-w-max min-h-full flex items-start gap-6'>
+      <div className='bg-slate-50 dark:bg-slate-900 w-full flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4'>
+        <div className='w-full min-h-full'>
           <ListColumn columns={orderedColumns} />
         </div>
 
