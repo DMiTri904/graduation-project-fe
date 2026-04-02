@@ -2,6 +2,7 @@
 import BoardBar from '../components/BoardBar'
 import BoardContent from '../components/BoardContent'
 import GroupSettingsTab from '../components/GroupSettingsTab'
+import ContributionTable from '@/modules/groups/components/ContributionTable'
 import { useParams } from 'react-router-dom'
 import { useGetGroupDetail } from '@/modules/groups/hooks/useGroups'
 import { useState } from 'react'
@@ -13,7 +14,7 @@ import {
 import { getCurrentUserFromToken } from '@/lib/token'
 import { useBoardStore } from '../stores/useBoardStore'
 
-type BoardTab = 'kanban' | 'settings'
+type BoardTab = 'kanban' | 'settings' | 'statistics'
 
 function Board() {
   const { id } = useParams<{ id: string }>()
@@ -23,7 +24,8 @@ function Board() {
   const currentGroupMembers = useBoardStore(state => state.currentGroupMembers)
   const tokenUser = getCurrentUserFromToken()
 
-  const { data: groupResponse } = useGetGroupDetail(groupId)
+  const { data: groupResponse, refetch: refetchGroupDetail } =
+    useGetGroupDetail(groupId)
   const { data: tasks = [] } = useGetBoardTasks(groupId, isMyTasksOnly)
 
   const groupDetail = groupResponse?.value
@@ -78,17 +80,36 @@ function Board() {
           >
             Cài đặt
           </button>
+          <button
+            type='button'
+            onClick={() => setActiveTab('statistics')}
+            className={`h-full border-b-2 text-sm font-medium transition-colors ${
+              activeTab === 'statistics'
+                ? 'text-blue-600 border-blue-600'
+                : 'text-slate-500 border-transparent hover:text-slate-700'
+            }`}
+          >
+            Thống kê
+          </button>
         </div>
       </div>
 
       {activeTab === 'kanban' ? (
         <BoardContent board={boardFromApi} currentUserRole={currentUserRole} />
-      ) : (
+      ) : activeTab === 'settings' ? (
         <GroupSettingsTab
           groupId={groupId}
           groupDetail={groupDetail}
-          currentUserRole={currentUserRole}
+          groupRole={currentUserRole}
+          systemRole={tokenUser.systemRole || ''}
+          reloadGroupData={async () => {
+            await refetchGroupDetail()
+          }}
         />
+      ) : (
+        <div className='flex-1 min-h-0 overflow-auto p-6 bg-slate-50'>
+          <ContributionTable />
+        </div>
       )}
     </div>
   )

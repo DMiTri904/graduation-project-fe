@@ -6,13 +6,17 @@ import {
   deleteGroup,
   createGroupAPI,
   addMemberToGroupAPI,
+  deactivateGroupAPI,
   deleteGroupMemberAPI,
   getGroupDetailAPI,
   getGroupMembersAPI,
+  reactiveGroupAPI,
+  updateGroupMemberRoleAPI,
   updateGroupInfoAPI,
   updateGroupGithubRepoAPI,
   type UpdateGroupInfoRequest,
-  type UpdateGroupGithubRepoRequest
+  type UpdateGroupGithubRepoRequest,
+  type UpdateGroupMemberRoleRequest
 } from '../api/group.api'
 import type { JoinGroupPayload } from '../types/group'
 import type {
@@ -193,6 +197,58 @@ export const useDeleteGroupMember = (groupId: number) => {
   })
 }
 
+export const useUpdateGroupMemberRole = (groupId: number) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      userId,
+      body
+    }: {
+      userId: number
+      body: UpdateGroupMemberRoleRequest
+    }) => updateGroupMemberRoleAPI(groupId, userId, body),
+    onSuccess: (_, variables) => {
+      queryClient.setQueryData(
+        [...groupKeys.detail(groupId.toString()), 'members'],
+        (oldData: any) => {
+          if (!oldData) return oldData
+
+          if (Array.isArray(oldData)) {
+            return oldData.map(item => {
+              const itemUserId = Number(item?.userId ?? item?.id)
+              if (itemUserId !== variables.userId) return item
+
+              return {
+                ...item,
+                role: variables.body.newRole
+              }
+            })
+          }
+
+          const rawMembers = Array.isArray(oldData.value) ? oldData.value : []
+
+          return {
+            ...oldData,
+            value: rawMembers.map((item: any) => {
+              const itemUserId = Number(item?.userId ?? item?.id)
+              if (itemUserId !== variables.userId) return item
+
+              return {
+                ...item,
+                role: variables.body.newRole
+              }
+            })
+          }
+        }
+      )
+      queryClient.invalidateQueries({
+        queryKey: [...groupKeys.detail(groupId.toString()), 'members']
+      })
+    }
+  })
+}
+
 export const useUpdateGroupInfo = (groupId: number) => {
   const queryClient = useQueryClient()
 
@@ -242,6 +298,34 @@ export const useUpdateGroupGithubRepo = (groupId: number) => {
           error?.response?.data?.message ||
           'Không thể cập nhật link GitHub repository. Vui lòng thử lại.'
       })
+    }
+  })
+}
+
+export const useDeactivateGroup = (groupId: number) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: () => deactivateGroupAPI(groupId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: groupKeys.detail(groupId.toString())
+      })
+      queryClient.invalidateQueries({ queryKey: groupKeys.lists() })
+    }
+  })
+}
+
+export const useReactiveGroup = (groupId: number) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: () => reactiveGroupAPI(groupId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: groupKeys.detail(groupId.toString())
+      })
+      queryClient.invalidateQueries({ queryKey: groupKeys.lists() })
     }
   })
 }

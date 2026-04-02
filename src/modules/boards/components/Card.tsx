@@ -96,11 +96,11 @@ function TrelloCard({ card }: CardProps) {
         {...attributes}
         {...listeners}
         onClick={handleCardClick}
-        className='cursor-pointer shadow-sm hover:shadow-md transition-shadow bg-white'
+        className='cursor-pointer shadow-sm hover:shadow-md transition-shadow bg-white min-w-0'
       >
-        <CardContent className='p-3 space-y-2'>
+        <CardContent className='p-3 space-y-2 min-w-0'>
           {/* Title */}
-          <h4 className='text-sm font-medium text-slate-900 line-clamp-2'>
+          <h4 className='text-sm font-medium text-slate-900 line-clamp-2 wrap-break-word'>
             {card?.title || 'Untitled'}
           </h4>
 
