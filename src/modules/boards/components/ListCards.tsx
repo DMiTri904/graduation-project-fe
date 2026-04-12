@@ -12,7 +12,7 @@ function ListCards({ cards }: ListCardsProps) {
       items={cards?.map(c => c._id)}
       strategy={verticalListSortingStrategy}
     >
-      <div className='flex min-w-0 flex-col gap-2 px-1.5 mx-1.5 overflow-x-hidden'>
+      <div className='mx-1 flex min-w-0 flex-col gap-2 overflow-x-hidden px-1 md:mx-1.5 md:px-1.5'>
         {cards.map(card => (
           <CardItem key={card._id} card={card} />
         ))}

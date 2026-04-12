@@ -246,7 +246,7 @@ export default function AddMemberModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={open => !open && handleClose()}>
-      <DialogContent className='sm:max-w-lg'>
+      <DialogContent className='w-[95vw] max-w-[95vw] sm:max-w-lg max-h-[85vh] overflow-y-auto'>
         <DialogHeader>
           <DialogTitle className='flex items-center gap-2'>
             <UserPlus className='h-5 w-5 text-blue-600' />
@@ -447,12 +447,13 @@ export default function AddMemberModal({
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className='flex-col gap-2 sm:flex-row'>
           <Button
             type='button'
             variant='outline'
             onClick={handleClose}
             disabled={isSubmitting}
+            className='w-full sm:w-auto'
           >
             Hủy
           </Button>
@@ -460,6 +461,7 @@ export default function AddMemberModal({
             type='button'
             onClick={handleConfirm}
             disabled={selectedUsers.length === 0 || isSubmitting}
+            className='w-full sm:w-auto'
           >
             {isSubmitting ? (
               <>

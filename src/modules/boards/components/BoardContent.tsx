@@ -444,7 +444,7 @@ function BoardContent({
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className='bg-slate-50 dark:bg-slate-900 w-full flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4'>
+      <div className='w-full flex-1 min-h-0 overflow-x-auto overflow-y-auto bg-slate-50 p-3 md:p-4 dark:bg-slate-900'>
         <div className='w-full min-h-full'>
           <ListColumn columns={orderedColumns} />
         </div>

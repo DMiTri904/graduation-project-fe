@@ -36,7 +36,7 @@ const ContributionTable = () => {
 
   return (
     <div className='w-full overflow-x-auto rounded-md border border-slate-200'>
-      <table className='min-w-full divide-y divide-slate-200 text-sm'>
+      <table className='min-w-160 md:min-w-full divide-y divide-slate-200 text-sm'>
         <thead className='bg-slate-100'>
           <tr>
             <th className='px-4 py-3 text-left font-semibold text-slate-700'>

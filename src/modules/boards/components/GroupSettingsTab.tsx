@@ -4,6 +4,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '@/components/ui/alert-dialog'
 import { toast } from 'sonner'
 import {
   useDeactivateGroup,
@@ -47,6 +57,7 @@ export default function GroupSettingsTab({
   const [isEditingGeneral, setIsEditingGeneral] = useState(false)
   const [isEditingGithub, setIsEditingGithub] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [isDeactivateModalOpen, setIsDeactivateModalOpen] = useState(false)
   const [confirmName, setConfirmName] = useState('')
 
   const {
@@ -178,23 +189,34 @@ export default function GroupSettingsTab({
     const isActive = groupDetail?.isActive !== false
 
     if (isActive) {
-      const isConfirmed = window.confirm(
-        'Bạn có chắc chắn muốn khóa nhóm? Mọi thành viên sẽ không thể chỉnh sửa task.'
-      )
-      if (!isConfirmed) return
+      setIsDeactivateModalOpen(true)
+      return
     }
 
     try {
       setIsUpdatingActiveStatus(true)
+      await reactiveGroupMutateAsync()
+      toast.success('Đã kích hoạt lại nhóm thành công!')
+      await reloadGroupData?.()
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.error?.message ||
+          error?.response?.data?.message ||
+          'Không thể cập nhật trạng thái nhóm. Vui lòng thử lại.'
+      )
+    } finally {
+      setIsUpdatingActiveStatus(false)
+    }
+  }
 
-      if (isActive) {
-        await deactivateGroupMutateAsync()
-        toast.success('Đã vô hiệu hóa nhóm thành công!')
-      } else {
-        await reactiveGroupMutateAsync()
-        toast.success('Đã kích hoạt lại nhóm thành công!')
-      }
+  const handleConfirmDeactivateGroup = async () => {
+    if (!canManageActiveStatus || groupId <= 0) return
 
+    try {
+      setIsUpdatingActiveStatus(true)
+      await deactivateGroupMutateAsync()
+      toast.success('Đã vô hiệu hóa nhóm thành công!')
+      setIsDeactivateModalOpen(false)
       await reloadGroupData?.()
     } catch (error: any) {
       toast.error(
@@ -208,7 +230,7 @@ export default function GroupSettingsTab({
   }
 
   return (
-    <div className='flex-1 min-h-0 overflow-auto bg-slate-50 p-6'>
+    <div className='flex-1 min-h-0 overflow-auto bg-slate-50 p-3 md:p-6'>
       <div className='mx-auto w-full max-w-4xl space-y-6'>
         <Card>
           <CardHeader>
@@ -248,17 +270,19 @@ export default function GroupSettingsTab({
                 Chỉnh sửa
               </Button>
             ) : isLeader ? (
-              <div className='flex items-center gap-3'>
+              <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3'>
                 <Button
                   variant='outline'
                   onClick={handleCancelGeneralEdit}
                   disabled={isUpdatingGroupInfo}
+                  className='w-full sm:w-auto'
                 >
                   Hủy bỏ
                 </Button>
                 <Button
                   onClick={handleSaveGroupInfo}
                   disabled={isUpdatingGroupInfo || groupId <= 0}
+                  className='w-full sm:w-auto'
                 >
                   {isUpdatingGroupInfo ? 'Đang lưu...' : 'Lưu thay đổi'}
                 </Button>
@@ -288,7 +312,7 @@ export default function GroupSettingsTab({
               <div className='space-y-2'>
                 <Label>GitHub Repo URL</Label>
                 {normalizedRepoUrl ? (
-                  <div className='flex items-center gap-2'>
+                  <div className='flex flex-col items-start gap-2 sm:flex-row sm:items-center'>
                     <a
                       href={safeRepoHref}
                       target='_blank'
@@ -303,6 +327,7 @@ export default function GroupSettingsTab({
                       variant='outline'
                       size='sm'
                       onClick={handleCopyRepoLink}
+                      className='w-full sm:w-auto'
                     >
                       Copy
                     </Button>
@@ -327,17 +352,19 @@ export default function GroupSettingsTab({
                 Chỉnh sửa
               </Button>
             ) : isLeader ? (
-              <div className='flex items-center gap-3'>
+              <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3'>
                 <Button
                   variant='outline'
                   onClick={handleCancelGithubEdit}
                   disabled={isUpdatingGithubRepo}
+                  className='w-full sm:w-auto'
                 >
                   Hủy bỏ
                 </Button>
                 <Button
                   onClick={handleUpdateGithubRepo}
                   disabled={isUpdatingGithubRepo || groupId <= 0}
+                  className='w-full sm:w-auto'
                 >
                   {isUpdatingGithubRepo ? 'Đang cập nhật...' : 'Lưu thay đổi'}
                 </Button>
@@ -407,7 +434,7 @@ export default function GroupSettingsTab({
               Xác nhận xóa nhóm
             </h3>
             <p className='mt-2 text-sm text-slate-600'>
-              Vui lòng nhập <strong>{groupDetail?.name || ''}</strong> để xác
+              Vui lòng nhập <strong>"{groupDetail?.name || ''}"</strong> để xác
               nhận.
             </p>
 
@@ -444,6 +471,39 @@ export default function GroupSettingsTab({
           </div>
         </div>
       )}
+
+      <AlertDialog
+        open={isDeactivateModalOpen}
+        onOpenChange={open => {
+          if (isUpdatingActiveStatus) return
+          setIsDeactivateModalOpen(open)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận vô hiệu hóa nhóm</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn khóa nhóm? Mọi thành viên sẽ không thể chỉnh
+              sửa task.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isUpdatingActiveStatus}>
+              Hủy
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={event => {
+                event.preventDefault()
+                void handleConfirmDeactivateGroup()
+              }}
+              disabled={isUpdatingActiveStatus}
+              className='bg-red-600 text-white hover:bg-red-700'
+            >
+              {isUpdatingActiveStatus ? 'Đang xử lý...' : 'Xác nhận'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

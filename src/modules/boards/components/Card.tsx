@@ -165,8 +165,8 @@ function TrelloCard({ card }: CardProps) {
               onAssignToMe={event =>
                 handleAssignToMe(event, () => setIsAssignPopoverOpen(false))
               }
-              onAssignToUser={(memberId, assignedUserId, event) =>
-                handleAssignToUser(memberId, assignedUserId, event, () =>
+              onAssignToUser={(assignedUserId, event) =>
+                handleAssignToUser(assignedUserId, event, () =>
                   setIsAssignPopoverOpen(false)
                 )
               }

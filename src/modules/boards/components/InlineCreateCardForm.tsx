@@ -106,16 +106,19 @@ export default function InlineCreateCardForm({
     if (!title.trim() || isPending || groupId <= 0) return
 
     try {
-      const formattedDueDate = formatDueDateForSubmit(dueDate)
-
-      await createTaskMutateAsync({
+      const payload = {
         title: title.trim(),
         description: '',
         taskStatus: 'ToDo' as const,
         priority: 'Medium' as const,
-        dueDate: formattedDueDate,
-        assignedTo: assignedTo ?? 0
-      })
+        dueDate: formatDueDateForSubmit(dueDate) ?? null,
+        assignedTo:
+          assignedTo === undefined || assignedTo === null || assignedTo === 0
+            ? null
+            : Number(assignedTo)
+      }
+
+      await createTaskMutateAsync(payload)
 
       onCancel()
     } catch (error) {

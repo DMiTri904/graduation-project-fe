@@ -237,7 +237,7 @@ export const useUpdateTask = (groupId: number) => {
         description: string
         priority: 'Low' | 'Medium' | 'High'
         taskStatus: 'ToDo' | 'InProgress' | 'Test' | 'Done'
-        assignedTo: number
+        assignedTo: number | null
         dueDate: string | null
       }
     }) => updateTaskAPI(taskId, body),
@@ -539,7 +539,7 @@ export const useCardAssignee = ({
     event.stopPropagation()
 
     if (currentUserMember) {
-      const assignTarget = currentUserMember.id
+      const assignTarget = currentUserMember.userId ?? currentUserMember.id
       const assignedToForUi = currentUserMember.userId ?? currentUserMember.id
 
       if (taskId > 0 && groupId > 0) {
@@ -553,7 +553,6 @@ export const useCardAssignee = ({
   }
 
   const handleAssignToUser = async (
-    memberId: number,
     assignedUserId: number,
     event: MouseEvent,
     onCompleted?: () => void
@@ -561,7 +560,7 @@ export const useCardAssignee = ({
     event.stopPropagation()
 
     if (taskId > 0 && groupId > 0) {
-      await assignTaskMutateAsync({ taskId, assignedTo: memberId })
+      await assignTaskMutateAsync({ taskId, assignedTo: assignedUserId })
     }
 
     updateCard(card._id, { assignedTo: assignedUserId })

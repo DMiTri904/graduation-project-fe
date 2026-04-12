@@ -56,12 +56,12 @@ function Board() {
         />
       </div>
 
-      <div className='shrink-0 border-b border-slate-200 bg-white px-6'>
-        <div className='flex items-center gap-6 h-12'>
+      <div className='shrink-0 border-b border-slate-200 bg-white px-3 md:px-6'>
+        <div className='flex h-11 items-center gap-4 overflow-x-auto px-0.5 md:h-12 md:gap-6 md:px-0'>
           <button
             type='button'
             onClick={() => setActiveTab('kanban')}
-            className={`h-full border-b-2 text-sm font-medium transition-colors ${
+            className={`h-full shrink-0 border-b-2 text-sm font-medium transition-colors ${
               activeTab === 'kanban'
                 ? 'text-blue-600 border-blue-600'
                 : 'text-slate-500 border-transparent hover:text-slate-700'
@@ -72,7 +72,7 @@ function Board() {
           <button
             type='button'
             onClick={() => setActiveTab('settings')}
-            className={`h-full border-b-2 text-sm font-medium transition-colors ${
+            className={`h-full shrink-0 border-b-2 text-sm font-medium transition-colors ${
               activeTab === 'settings'
                 ? 'text-blue-600 border-blue-600'
                 : 'text-slate-500 border-transparent hover:text-slate-700'
@@ -83,7 +83,7 @@ function Board() {
           <button
             type='button'
             onClick={() => setActiveTab('statistics')}
-            className={`h-full border-b-2 text-sm font-medium transition-colors ${
+            className={`h-full shrink-0 border-b-2 text-sm font-medium transition-colors ${
               activeTab === 'statistics'
                 ? 'text-blue-600 border-blue-600'
                 : 'text-slate-500 border-transparent hover:text-slate-700'
@@ -107,7 +107,7 @@ function Board() {
           }}
         />
       ) : (
-        <div className='flex-1 min-h-0 overflow-auto p-6 bg-slate-50'>
+        <div className='flex-1 min-h-0 overflow-auto bg-slate-50 p-3 md:p-6'>
           <ContributionTable />
         </div>
       )}

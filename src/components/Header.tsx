@@ -19,17 +19,20 @@ import { getCurrentUserFromToken } from '@/lib/token'
 import NotificationPopover from '@/modules/notification/components/NotificationPopover'
 import { useUserProfile } from '@/modules/user/hook/user.hook'
 import { useNavigate } from 'react-router-dom'
+import type { ReactNode } from 'react'
 
 interface HeaderProps {
   userName?: string
   studentId?: string
   avatarUrl?: string
+  mobileSidebarTrigger?: ReactNode
 }
 
 export default function Header({
   userName,
   studentId,
-  avatarUrl
+  avatarUrl,
+  mobileSidebarTrigger
 }: HeaderProps) {
   const navigate = useNavigate()
   const { data } = useUserProfile()
@@ -72,21 +75,25 @@ export default function Header({
   }
 
   return (
-    <header className='h-18 border-b border-slate-200 flex items-center justify-between px-6 shrink-0'>
-      <div className='w-96 relative'>
-        <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-slate-400' />
-        <Input
-          type='text'
-          placeholder='Search tasks, groups, or files...'
-          className='pl-9 bg-slate-50 border-none'
-        />
+    <header className='h-16 border-b border-slate-200 flex items-center justify-between gap-2 px-3 md:px-6 shrink-0'>
+      <div className='flex min-w-0 flex-1 items-center gap-2'>
+        <div className='lg:hidden'>{mobileSidebarTrigger}</div>
+
+        <div className='relative w-full max-w-none md:max-w-sm lg:max-w-md'>
+          <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-slate-400' />
+          <Input
+            type='text'
+            placeholder='Search tasks, groups, or files...'
+            className='h-9 pl-9 bg-slate-50 border-none'
+          />
+        </div>
       </div>
 
-      <div className='flex items-center gap-4'>
+      <div className='flex shrink-0 items-center gap-1 md:gap-3'>
         <Button
           variant='ghost'
           size='icon'
-          className='text-slate-500 rounded-full'
+          className='hidden md:inline-flex text-slate-500 rounded-full'
         >
           <Moon className='h-5 w-5' />
         </Button>
@@ -94,28 +101,28 @@ export default function Header({
         <Button
           variant='ghost'
           size='icon'
-          className='text-slate-500 rounded-full'
+          className='hidden md:inline-flex text-slate-500 rounded-full'
         >
           <HelpCircle className='h-5 w-5' />
         </Button>
 
-        <div className='h-8 w-px bg-slate-200 mx-2'></div>
+        <div className='hidden sm:block h-8 w-px bg-slate-200 mx-1 md:mx-2'></div>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
               type='button'
-              className='flex items-center gap-3 text-right rounded-md px-2 py-1 hover:bg-slate-100 transition-colors'
+              className='flex items-center gap-2 md:gap-3 text-right rounded-md px-1.5 md:px-2 py-1 hover:bg-slate-100 transition-colors'
             >
-              <div>
-                <p className='text-sm font-semibold leading-none'>
+              <div className='hidden min-w-0 sm:block max-w-40 md:max-w-44 lg:max-w-none'>
+                <p className='truncate text-sm font-semibold leading-none'>
                   {displayName}
                 </p>
-                <p className='text-xs text-slate-500 mt-1'>
+                <p className='mt-1 truncate text-xs text-slate-500 lg:block hidden'>
                   Student ID: {displayStudentId}
                 </p>
               </div>
-              <Avatar>
+              <Avatar className='shrink-0'>
                 <AvatarImage src={getAvatarSrc(displayAvatar)} />
                 <AvatarFallback
                   className={`${getAvatarColorClass(displayName)} text-white font-medium`}

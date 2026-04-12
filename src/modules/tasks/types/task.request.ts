@@ -5,8 +5,8 @@ export interface CreateTaskRequest {
   description?: string
   priority?: TaskPriority
   startDate?: string
-  dueDate?: string
-  assignedTo?: number
+  dueDate?: string | null
+  assignedTo?: number | null
   labelIds?: number[]
 }
 
@@ -15,8 +15,8 @@ export interface UpdateTaskRequest {
   description?: string
   priority?: TaskPriority
   startDate?: string
-  dueDate?: string
-  assignedTo?: number
+  dueDate?: string | null
+  assignedTo?: number | null
 }
 
 export interface UpdateTaskStatusRequest {

@@ -218,7 +218,7 @@ export default function ManageMembersModal({
           : { onOpenChange: handleDialogOpenChange })}
       >
         {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-        <DialogContent className='sm:max-w-2xl'>
+        <DialogContent className='w-[95vw] max-w-[95vw] sm:max-w-2xl max-h-[85vh] overflow-hidden'>
           <DialogHeader>
             <DialogTitle>Quản lý thành viên nhóm</DialogTitle>
             <DialogDescription>
@@ -226,7 +226,7 @@ export default function ManageMembersModal({
             </DialogDescription>
           </DialogHeader>
 
-          <div className='max-h-96 overflow-y-auto pr-1'>
+          <div className='max-h-[60vh] overflow-y-auto pr-1'>
             <div className='space-y-2'>
               {isLoading && (
                 <div className='rounded-md border border-slate-200 px-4 py-3 text-sm text-slate-500'>
@@ -252,7 +252,7 @@ export default function ManageMembersModal({
                   return (
                     <div
                       key={`${member.id}-${member.userId ?? member.id}`}
-                      className='flex items-center justify-between gap-3 rounded-md border border-slate-200 bg-white px-3 py-2'
+                      className='flex flex-col items-start gap-3 rounded-md border border-slate-200 bg-white px-3 py-2 sm:flex-row sm:items-center sm:justify-between'
                     >
                       <div className='flex min-w-0 items-center gap-3'>
                         <Avatar className='h-9 w-9'>
@@ -279,7 +279,7 @@ export default function ManageMembersModal({
                         </div>
                       </div>
 
-                      <div className='flex items-center gap-2'>
+                      <div className='flex w-full items-center gap-2 sm:w-auto'>
                         {canManageRole ? (
                           <Select
                             value={memberRole}
@@ -295,7 +295,7 @@ export default function ManageMembersModal({
                               updateMemberRoleMutation.isPending
                             }
                           >
-                            <SelectTrigger className='h-8 w-30 text-xs'>
+                            <SelectTrigger className='h-8 w-full text-xs sm:w-30'>
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
