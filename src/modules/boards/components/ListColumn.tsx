@@ -15,7 +15,7 @@ function ListColumn({ columns }: ListColumnProps) {
       items={columns?.map(c => c._id)}
       strategy={horizontalListSortingStrategy}
     >
-      <div className='grid w-full grid-cols-4 gap-4 min-w-0'>
+      <div className='flex w-full min-w-0 snap-x snap-mandatory gap-3 overflow-x-auto pb-2 md:grid md:grid-cols-2 md:gap-4 md:overflow-visible lg:grid-cols-4'>
         {columns?.map(column => (
           <ColumnItem key={column._id} column={column} />
         ))}

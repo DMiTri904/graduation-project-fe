@@ -32,12 +32,12 @@ export interface CreateGroupTaskPayload {
   description?: string
   taskStatus: 'ToDo' | 'InProgress' | 'Test' | 'Done'
   priority: 'High' | 'Medium' | 'Low'
-  dueDate?: string
-  assignedTo: number
+  dueDate: string | null
+  assignedTo: number | null
 }
 
 export interface AssignTaskPayload {
-  assignedTo: number
+  assignedTo: number | null
 }
 
 export interface UpdateTaskDueDatePayload {
@@ -49,7 +49,7 @@ export interface UpdateTaskPayload {
   description: string
   priority: 'Low' | 'Medium' | 'High'
   taskStatus: 'ToDo' | 'InProgress' | 'Test' | 'Done'
-  assignedTo: number
+  assignedTo: number | null
   dueDate: string | null
 }
 
@@ -122,7 +122,7 @@ export const assignTaskAPI = async (
   assignedTo: number | null
 ) => {
   const response = await api.put(`/task/${taskId}/assign`, {
-    assignedTo: assignedTo ?? 0
+    assignedTo
   } satisfies AssignTaskPayload)
   return response.data
 }

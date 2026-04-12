@@ -203,10 +203,13 @@ export default function CardDetailSheet({
       return
     }
 
-    const assignedToNumber =
-      editForm.assignee === 'unassigned' ? 0 : Number(editForm.assignee)
-
-    const dueDateIso = formatDueDateForSubmit(editForm.dueDate) ?? null
+    const normalizedAssignedTo =
+      editForm.assignee === 'unassigned' ||
+      editForm.assignee === '' ||
+      editForm.assignee === undefined ||
+      editForm.assignee === null
+        ? null
+        : Number(editForm.assignee)
 
     const payload = {
       title: editForm.title.trim() || card.title || '',
@@ -214,10 +217,10 @@ export default function CardDetailSheet({
       priority: mapPriorityToApi(editForm.priority),
       taskStatus: mapColumnTitleToTaskStatus(column?.title),
       assignedTo:
-        Number.isFinite(assignedToNumber) && assignedToNumber > 0
-          ? assignedToNumber
-          : 0,
-      dueDate: dueDateIso
+        normalizedAssignedTo === null || !Number.isFinite(normalizedAssignedTo)
+          ? null
+          : Number(normalizedAssignedTo),
+      dueDate: formatDueDateForSubmit(editForm.dueDate) ?? null
     }
 
     try {
@@ -236,7 +239,9 @@ export default function CardDetailSheet({
             ? null
             : (selectedMember?.userId ??
               selectedMember?.id ??
-              assignedToNumber),
+              (Number.isFinite(normalizedAssignedTo)
+                ? Number(normalizedAssignedTo)
+                : null)),
         dueDate: payload.dueDate ?? undefined
       })
 
@@ -266,9 +271,9 @@ export default function CardDetailSheet({
   return (
     <>
       <Sheet open={isOpen} onOpenChange={onClose}>
-        <SheetContent className='sm:max-w-4xl xl:max-w-5xl overflow-y-auto p-0'>
+        <SheetContent className='w-[95vw] max-w-[95vw] sm:max-w-2xl lg:max-w-4xl xl:max-w-5xl overflow-y-auto p-0'>
           {/* Sticky header */}
-          <div className='sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between z-10'>
+          <div className='sticky top-0 z-10 flex items-center justify-between border-b bg-white px-4 py-3 md:px-6 md:py-4'>
             <div className='flex items-center gap-3 flex-1'>
               <ListTodo className='h-5 w-5 text-slate-500' />
               {isEditingTitle ? (
@@ -301,10 +306,10 @@ export default function CardDetailSheet({
             </Button>
           </div>
 
-          <div className='px-6 py-6'>
-            <div className='grid grid-cols-3 gap-6'>
+          <div className='px-4 py-4 md:px-6 md:py-6'>
+            <div className='grid grid-cols-1 gap-6 lg:grid-cols-3'>
               {/* Left: main content */}
-              <div className='col-span-2 space-y-5'>
+              <div className='space-y-5 lg:col-span-2'>
                 {/* Description */}
                 <div>
                   <Label className='text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 block'>

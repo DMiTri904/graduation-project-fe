@@ -63,16 +63,22 @@ export default function CreateCardDialog({
     if (!title.trim() || groupId <= 0 || isPending) return
 
     try {
-      const dueDateIso = formatDueDateForSubmit(dueDate)
-
-      await createTaskMutateAsync({
+      const payload = {
         title: title.trim(),
         description: description.trim() || undefined,
         priority: mapPriorityToApi(priority),
-        taskStatus: 'ToDo',
-        dueDate: dueDateIso,
-        assignedTo: Number(assignedTo)
-      })
+        taskStatus: 'ToDo' as const,
+        dueDate: formatDueDateForSubmit(dueDate) ?? null,
+        assignedTo:
+          assignedTo === '' ||
+          assignedTo === '0' ||
+          assignedTo === undefined ||
+          assignedTo === null
+            ? null
+            : Number(assignedTo)
+      }
+
+      await createTaskMutateAsync(payload)
 
       // Reset form
       setTitle('')
@@ -110,7 +116,7 @@ export default function CreateCardDialog({
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className='sm:max-w-131.25'>
+      <DialogContent className='w-[95vw] max-w-[95vw] sm:max-w-2xl max-h-[85vh] overflow-y-auto'>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Create New Card</DialogTitle>
@@ -205,16 +211,21 @@ export default function CreateCardDialog({
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className='flex-col gap-2 sm:flex-row'>
             <Button
               type='button'
               variant='outline'
               onClick={() => setOpen(false)}
               disabled={isPending}
+              className='w-full sm:w-auto'
             >
               Cancel
             </Button>
-            <Button type='submit' disabled={!title.trim() || isPending}>
+            <Button
+              type='submit'
+              disabled={!title.trim() || isPending}
+              className='w-full sm:w-auto'
+            >
               {isPending ? 'Creating...' : 'Create Card'}
             </Button>
           </DialogFooter>

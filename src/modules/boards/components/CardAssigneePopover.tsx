@@ -22,7 +22,6 @@ interface CardAssigneePopoverProps {
   onAssignToMe: (event: MouseEvent) => void | Promise<void>
   onUnassign: (event: MouseEvent) => void | Promise<void>
   onAssignToUser: (
-    memberId: number,
     assignedUserId: number,
     event: MouseEvent
   ) => void | Promise<void>
@@ -115,7 +114,7 @@ export default function CardAssigneePopover({
                 key={member.id}
                 className='w-full flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-slate-100 rounded transition-colors text-left'
                 onClick={event =>
-                  onAssignToUser(member.id, member.userId ?? member.id, event)
+                  onAssignToUser(member.userId ?? member.id, event)
                 }
               >
                 <Avatar className='h-6 w-6'>
