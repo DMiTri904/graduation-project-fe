@@ -31,6 +31,7 @@ export default function CreateGroupModal({
   onSuccess
 }: CreateGroupModalProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('')
+  const [selectedGroupType, setSelectedGroupType] = useState<string>('0')
   const { mutate: createGroup, isPending } = useCreateGroup()
 
   const {
@@ -42,13 +43,15 @@ export default function CreateGroupModal({
   } = useForm<CreateGroupFormData>({
     resolver: yupResolver(createGroupSchema),
     defaultValues: {
-      maxMembers: 5
+      maxMembers: 5,
+      groupType: 0
     }
   })
 
   const handleClose = () => {
     reset()
     setSelectedCategory('')
+    setSelectedGroupType('0')
     onClose()
   }
 
@@ -56,7 +59,8 @@ export default function CreateGroupModal({
     const payload = {
       name: data.name,
       subjectOrProjectName: data.category,
-      limitedUser: data.maxMembers
+      limitedUser: data.maxMembers,
+      groupType: Number(data.groupType)
     }
 
     createGroup(payload, {
@@ -146,6 +150,34 @@ export default function CreateGroupModal({
             </Select>
             {errors.category && (
               <p className='text-xs text-red-500'>{errors.category.message}</p>
+            )}
+          </div>
+
+          <div className='space-y-2'>
+            <Label htmlFor='groupType'>
+              Loại nhóm <span className='text-red-500'>*</span>
+            </Label>
+            <Select
+              value={selectedGroupType}
+              onValueChange={value => {
+                setSelectedGroupType(value)
+                setValue('groupType', Number(value), { shouldValidate: true })
+              }}
+              disabled={isPending}
+            >
+              <SelectTrigger
+                id='groupType'
+                className={errors.groupType ? 'border-red-500' : ''}
+              >
+                <SelectValue placeholder='Chọn loại nhóm' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='0'>IT</SelectItem>
+                <SelectItem value='1'>General</SelectItem>
+              </SelectContent>
+            </Select>
+            {errors.groupType && (
+              <p className='text-xs text-red-500'>{errors.groupType.message}</p>
             )}
           </div>
 

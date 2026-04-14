@@ -26,6 +26,7 @@ import {
 import { useBoardStore } from '../stores/useBoardStore'
 import type { Card } from '../types/board'
 import { useDeleteTask, useUpdateTask } from '../hooks/useBoardHooks'
+import { useTaskDetail } from '../hooks/useTaskDetail'
 import TaskCommentSection from '@/modules/comments/components/TaskCommentSection'
 import { getPriorityConfig, PRIORITY_OPTIONS } from '~/utils/priority'
 import { toast } from 'sonner'
@@ -72,6 +73,8 @@ export default function CardDetailSheet({
     const id = Number(String(card?.boardId || '').replace(/\D/g, ''))
     return Number.isFinite(id) && id > 0 ? id : 0
   }, [card?.boardId])
+
+  const { taskDetail, setTaskDetail } = useTaskDetail({ card, isOpen, taskId })
 
   const { mutateAsync: updateTaskMutateAsync, isPending: isUpdatingTask } =
     useUpdateTask(groupId)
@@ -129,23 +132,24 @@ export default function CardDetailSheet({
   }
 
   useEffect(() => {
-    if (!card) return
+    if (!taskDetail) return
 
     const matchedMember = activeGroupMembers.find(
       member =>
-        member.id === card.assignedTo || member.userId === card.assignedTo
+        member.id === taskDetail.assignedTo ||
+        member.userId === taskDetail.assignedTo
     )
 
     setEditForm({
-      title: card.title || '',
-      description: card.description || '',
-      priority: card.priority || 'medium',
+      title: taskDetail.title || '',
+      description: taskDetail.description || '',
+      priority: taskDetail.priority || 'medium',
       assignee: matchedMember ? String(matchedMember.id) : 'unassigned',
-      dueDate: toInputDate(card.dueDate)
+      dueDate: toInputDate(taskDetail.dueDate)
     })
-  }, [card, activeGroupMembers])
+  }, [taskDetail, activeGroupMembers])
 
-  if (!card || !board) return null
+  if (!card || !taskDetail || !board) return null
 
   const column = board.columns.find(col => col._id === card.columnId)
 
@@ -163,7 +167,7 @@ export default function CardDetailSheet({
     setIsEditingTitle(false)
     setEditForm(prev => ({
       ...prev,
-      title: prev.title.trim() || card.title || ''
+      title: prev.title.trim() || taskDetail.title || ''
     }))
   }
 
@@ -173,7 +177,7 @@ export default function CardDetailSheet({
       handleTitleBlur()
     }
     if (e.key === 'Escape') {
-      setEditForm(prev => ({ ...prev, title: card.title || '' }))
+      setEditForm(prev => ({ ...prev, title: taskDetail.title || '' }))
       setIsEditingTitle(false)
     }
   }
@@ -212,7 +216,7 @@ export default function CardDetailSheet({
         : Number(editForm.assignee)
 
     const payload = {
-      title: editForm.title.trim() || card.title || '',
+      title: editForm.title.trim() || taskDetail.title || '',
       description: editForm.description || '',
       priority: mapPriorityToApi(editForm.priority),
       taskStatus: mapColumnTitleToTaskStatus(column?.title),
@@ -244,6 +248,18 @@ export default function CardDetailSheet({
                 : null)),
         dueDate: payload.dueDate ?? undefined
       })
+
+      setTaskDetail(prev =>
+        prev
+          ? {
+              ...prev,
+              title: payload.title,
+              description: payload.description,
+              priority: editForm.priority,
+              dueDate: payload.dueDate ?? undefined
+            }
+          : prev
+      )
 
       toast.success('Cập nhật công việc thành công')
       onClose()
@@ -346,11 +362,11 @@ export default function CardDetailSheet({
 
                 {/* Activity meta — compact */}
                 <div className='flex items-center gap-4 text-xs text-slate-400 py-2 border-t border-slate-100'>
-                  {card.createdAt && (
-                    <span>Tạo: {formatDate(card.createdAt)}</span>
+                  {taskDetail.createdAt && (
+                    <span>Tạo: {formatDate(taskDetail.createdAt)}</span>
                   )}
-                  {card.updatedAt && (
-                    <span>Cập nhật: {formatDate(card.updatedAt)}</span>
+                  {taskDetail.updatedAt && (
+                    <span>Cập nhật: {formatDate(taskDetail.updatedAt)}</span>
                   )}
                   {/* <span className='flex items-center gap-1'>
                     <MessageSquare className='h-3 w-3' />
@@ -446,17 +462,58 @@ export default function CardDetailSheet({
                 </div>
 
                 {/* Reporter */}
-                {card.reporter && (
+                {taskDetail.reporter && (
                   <div>
                     <Label className='text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-1'>
                       <User className='h-3 w-3' />
                       Người báo cáo
                     </Label>
                     <div className='text-sm text-slate-700 px-3 py-2 bg-slate-50 rounded-md border border-slate-200'>
-                      {card.reporter}
+                      {taskDetail.reporter}
                     </div>
                   </div>
                 )}
+
+                <div>
+                  <Label className='text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-1'>
+                    <Paperclip className='h-3 w-3' />
+                    PR
+                  </Label>
+                  <div className='text-sm text-slate-700 px-3 py-2 bg-slate-50 rounded-md border border-slate-200'>
+                    {taskDetail.pr?.html_url ? (
+                      <div className='space-y-2'>
+                        <div className='flex items-center gap-2 flex-wrap'>
+                          <a
+                            href={taskDetail.pr?.html_url}
+                            target='_blank'
+                            rel='noreferrer'
+                            className='text-blue-600 hover:text-blue-700 hover:underline break-all font-medium'
+                          >
+                            {`${taskDetail.pr?.title || 'Pull Request'} #${taskDetail.pr?.number ?? ''}`}
+                          </a>
+                          <Badge
+                            variant='secondary'
+                            className={
+                              taskDetail.pr?.merged
+                                ? 'bg-purple-100 text-purple-700 border-purple-200'
+                                : taskDetail.pr?.state === 'open'
+                                  ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+                                  : 'bg-red-100 text-red-700 border-red-200'
+                            }
+                          >
+                            {taskDetail.pr?.merged
+                              ? 'Merged'
+                              : taskDetail.pr?.state === 'open'
+                                ? 'Open'
+                                : 'Closed'}
+                          </Badge>
+                        </div>
+                      </div>
+                    ) : (
+                      'Chưa có PR'
+                    )}
+                  </div>
+                </div>
 
                 {/* Due date */}
                 <div>
@@ -512,8 +569,8 @@ export default function CardDetailSheet({
           <AlertDialogHeader>
             <AlertDialogTitle>Bạn có chắc muốn xóa công việc?</AlertDialogTitle>
             <AlertDialogDescription>
-              Công việc "{card.title}" sẽ bị xóa vĩnh viễn và không thể khôi
-              phục.
+              Công việc "{taskDetail.title}" sẽ bị xóa vĩnh viễn và không thể
+              khôi phục.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
