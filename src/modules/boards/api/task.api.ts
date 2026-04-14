@@ -1,11 +1,26 @@
 import api from '@/lib/axios'
 
+export interface GitHubPRObject {
+  number: number
+  title: string
+  html_url: string
+  state?: 'open' | 'closed' | string
+  commits?: number
+  merged?: boolean
+  user?: {
+    login?: string
+    avatar_url?: string
+    html_url?: string
+  }
+}
+
 export interface TaskDto {
   id: number | string
   title: string
   description?: string | null
   status?: string
   priority?: string
+  pr?: GitHubPRObject | null
   assignedTo?: number | null
   startDate?: string | null
   dueDate?: string | null
@@ -19,6 +34,17 @@ export interface TaskDto {
 interface TaskListResponse {
   value?: TaskDto[]
   data?: TaskDto[]
+  isSuccess?: boolean
+  isFailure?: boolean
+  error?: {
+    code?: string
+    message?: string
+  }
+}
+
+interface TaskDetailResponse {
+  value?: TaskDto
+  data?: TaskDto
   isSuccess?: boolean
   isFailure?: boolean
   error?: {
@@ -107,6 +133,36 @@ export const getMyGroupTasksAPI = async (
   }
 
   return []
+}
+
+export const getTaskDetailAPI = async (
+  taskId: number
+): Promise<TaskDto | null> => {
+  const response = await api.get<TaskDetailResponse | TaskDto>(
+    `/task/${taskId}`
+  )
+
+  const payload = response.data
+
+  if (!payload) return null
+
+  if ('isFailure' in payload && payload.isFailure) {
+    throw new Error(payload?.error?.message || 'Không thể tải chi tiết task')
+  }
+
+  if ('value' in payload && payload.value && !Array.isArray(payload.value)) {
+    return payload.value
+  }
+
+  if ('data' in payload && payload.data && !Array.isArray(payload.data)) {
+    return payload.data
+  }
+
+  if ('id' in payload) {
+    return payload
+  }
+
+  return null
 }
 
 export const createGroupTaskAPI = async (

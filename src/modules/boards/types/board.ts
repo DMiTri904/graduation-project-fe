@@ -1,3 +1,17 @@
+export interface GitHubPRObject {
+  number: number
+  title: string
+  html_url: string
+  state?: 'open' | 'closed' | string
+  commits?: number
+  merged?: boolean
+  user?: {
+    login?: string
+    avatar_url?: string
+    html_url?: string
+  }
+}
+
 export interface Card {
   _id: string
   boardId: string
@@ -8,6 +22,7 @@ export interface Card {
   priority?: 'low' | 'medium' | 'high'
   assignedTo?: number | null
   reporter?: string
+  pr?: GitHubPRObject | null
   dueDate?: string
   createdAt?: string
   updatedAt?: string

@@ -15,16 +15,19 @@ interface AccountsTableProps {
 
 export default function AccountsTable({ accounts }: AccountsTableProps) {
   return (
-    <div className='rounded-md border border-slate-200 bg-white'>
+    <div className='rounded-md border border-slate-200 bg-white [&>div]:max-h-[60vh] [&>div]:overflow-y-auto'>
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className='w-15'>STT</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Họ tên</TableHead>
-            <TableHead>Mã SV</TableHead>
-            <TableHead>Vai trò</TableHead>
-            <TableHead>Trạng thái</TableHead>
+            <TableHead className='w-15 sticky top-0 z-10 bg-white'>
+              STT
+            </TableHead>
+            <TableHead className='sticky top-0 z-10 bg-white'>Email</TableHead>
+            <TableHead className='sticky top-0 z-10 bg-white'>Họ tên</TableHead>
+            <TableHead className='sticky top-0 z-10 bg-white'>Mã SV</TableHead>
+            <TableHead className='sticky top-0 z-10 bg-white'>
+              Vai trò
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -50,7 +53,7 @@ export default function AccountsTable({ accounts }: AccountsTableProps) {
                     {account.role}
                   </Badge>
                 </TableCell>
-                <TableCell>
+                {/* <TableCell>
                   <Badge
                     variant={
                       account.status === 'Active' ? 'default' : 'secondary'
@@ -63,7 +66,7 @@ export default function AccountsTable({ accounts }: AccountsTableProps) {
                   >
                     {account.status === 'Active' ? 'Hoạt động' : 'Vô hiệu'}
                   </Badge>
-                </TableCell>
+                </TableCell> */}
               </TableRow>
             ))
           )}

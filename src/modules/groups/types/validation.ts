@@ -17,7 +17,13 @@ export const createGroupSchema = yup.object().shape({
     .typeError('Vui lòng nhập một số hợp lệ')
     .min(2, 'Số thành viên tối thiểu là 2')
     .max(20, 'Số thành viên tối đa là 20')
-    .default(5)
+    .default(5),
+  groupType: yup
+    .number()
+    .transform(value => (Number.isNaN(value) ? 0 : value))
+    .oneOf([0, 1], 'Loại nhóm không hợp lệ')
+    .required('Loại nhóm là bắt buộc')
+    .default(0)
 })
 
 /**
