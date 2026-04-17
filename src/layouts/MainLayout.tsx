@@ -12,9 +12,9 @@ import { useState } from 'react'
 
 const NAV_ITEMS = [
   { label: 'Dashboard', path: '/' },
-  { label: 'My Groups', path: '/groups' },
-  { label: 'My Classes', path: '/classes' },
-  { label: 'Accounts', path: '/account-management' }
+  { label: 'Danh sách nhóm', path: '/groups' },
+  { label: 'Danh sách lớp', path: '/classes' },
+  { label: 'Quản lý tài khoản', path: '/account-management' }
   // { label: 'Settings', path: '/settings' },
 ]
 

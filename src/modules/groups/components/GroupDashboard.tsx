@@ -1,11 +1,21 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, UserPlus, User, TrendingUp, FileUp, Loader2 } from 'lucide-react'
+import {
+  Plus,
+  UserPlus,
+  User,
+  TrendingUp,
+  FileUp,
+  Loader2,
+  FileText
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
+import { toast } from 'sonner'
 import { useGetGroups } from '../hooks/useGroups'
+import { useExportReport } from '@/modules/reports/hooks/useExportReport'
 import CreateGroupModal from './CreateGroupModal'
 import JoinGroupModal from './JoinGroupModal'
 import ImportFileDialog from './ImportFileDialog'
@@ -14,6 +24,10 @@ export default function GroupDashboard() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false)
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false)
+  const [currentExportGroupId, setCurrentExportGroupId] = useState<
+    string | null
+  >(null)
+  const { isLoading: isExportingReport, exportAndDownload } = useExportReport()
 
   // Fetch groups using React Query
   const {
@@ -27,6 +41,30 @@ export default function GroupDashboard() {
   const handleImportSuccess = () => {
     console.log('Import success! Reloading data...')
     refetch()
+  }
+
+  const handleExportReport = async (
+    event: React.MouseEvent,
+    groupId: string
+  ) => {
+    event.preventDefault()
+    event.stopPropagation()
+
+    const numericGroupId = Number(String(groupId).replace(/\D/g, ''))
+    if (!Number.isFinite(numericGroupId) || numericGroupId <= 0) {
+      toast.error('ID nhóm không hợp lệ để xuất báo cáo')
+      return
+    }
+
+    try {
+      setCurrentExportGroupId(groupId)
+      await exportAndDownload(numericGroupId)
+      toast.success('Xuất báo cáo thành công')
+    } catch {
+      toast.error('Xuất báo cáo thất bại, vui lòng thử lại')
+    } finally {
+      setCurrentExportGroupId(null)
+    }
   }
 
   const getProgressColor = (progress: number) => {
@@ -85,7 +123,7 @@ export default function GroupDashboard() {
         <div className='flex gap-3'>
           <Button onClick={() => setIsCreateModalOpen(true)} className='gap-2'>
             <Plus className='h-4 w-4' />
-            Create Group
+            Tạo nhóm
           </Button>
           <Button
             onClick={() => setIsJoinModalOpen(true)}
@@ -169,6 +207,28 @@ export default function GroupDashboard() {
                           indicatorClassName={getProgressColor(group.progress)}
                         />
                       </div>
+
+                      <Button
+                        type='button'
+                        variant='outline'
+                        size='sm'
+                        className='w-full gap-2'
+                        onClick={event => handleExportReport(event, group.id)}
+                        disabled={isExportingReport}
+                      >
+                        {isExportingReport &&
+                        currentExportGroupId === group.id ? (
+                          <>
+                            <Loader2 className='h-4 w-4 animate-spin' />
+                            Đang xử lý...
+                          </>
+                        ) : (
+                          <>
+                            <FileText className='h-4 w-4' />
+                            Tạo Báo Cáo
+                          </>
+                        )}
+                      </Button>
                     </CardContent>
                   </Card>
                 )
@@ -195,7 +255,7 @@ export default function GroupDashboard() {
               className='gap-2'
             >
               <Plus className='h-4 w-4' />
-              Create Group
+              Tạo nhóm
             </Button>
             <Button
               onClick={() => setIsJoinModalOpen(true)}

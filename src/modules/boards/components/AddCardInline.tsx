@@ -32,7 +32,7 @@ export default function AddCardInline({
       onClick={() => setIsAdding(true)}
     >
       <Plus className='h-4 w-4 mr-2' />
-      Add a card
+      Thêm công việc
     </Button>
   )
 }
