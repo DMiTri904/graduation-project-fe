@@ -53,7 +53,7 @@ const NotificationItem = ({
       )}
     >
       <div className='flex items-start justify-between gap-3'>
-        <p className='text-sm font-medium text-slate-800 line-clamp-2'>
+        <p className='text-sm font-medium text-slate-800 wrap-break-words'>
           {displayTitle}
         </p>
         {!notification.isRead && (
@@ -61,7 +61,7 @@ const NotificationItem = ({
         )}
       </div>
       {displayBody && (
-        <p className='mt-1 text-xs text-slate-600 line-clamp-2'>
+        <p className='mt-1 text-xs text-slate-600 wrap-break-word'>
           {displayBody}
         </p>
       )}
@@ -78,7 +78,15 @@ export default function NotificationPopover() {
     useNotificationClick()
   const { mutate: markAllAsRead, isPending: isMarkingAll } = useMarkAllAsRead()
 
-  const unreadNotifications = data.filter(item => item.isRead === false)
+  const sortedNotifications = [...data].sort((a, b) => {
+    const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0
+    const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0
+    return timeB - timeA
+  })
+
+  const unreadNotifications = sortedNotifications.filter(
+    item => item.isRead === false
+  )
   const unreadCount = unreadNotifications.length
 
   return (
@@ -122,13 +130,13 @@ export default function NotificationPopover() {
             <div className='px-4 py-6 text-center text-sm text-slate-500'>
               Đang tải thông báo...
             </div>
-          ) : data.length === 0 ? (
+          ) : sortedNotifications.length === 0 ? (
             <div className='px-4 py-8 text-center text-sm text-slate-500'>
               Hiện chưa có thông báo nào.
             </div>
           ) : (
             <div className='divide-y divide-slate-100'>
-              {data.map(notification => (
+              {sortedNotifications.map(notification => (
                 <NotificationItem
                   key={notification.id}
                   notification={notification}

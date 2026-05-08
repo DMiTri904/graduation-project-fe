@@ -3,6 +3,7 @@ import BoardBar from '../components/BoardBar'
 import BoardContent from '../components/BoardContent'
 import GroupSettingsTab from '../components/GroupSettingsTab'
 import ContributionTable from '@/modules/groups/components/ContributionTable'
+import OverdueTaskList from '@/modules/tasks/components/OverdueTaskList'
 import { useParams } from 'react-router-dom'
 import { useGetGroupDetail } from '@/modules/groups/hooks/useGroups'
 import { useState } from 'react'
@@ -108,7 +109,10 @@ function Board() {
         />
       ) : (
         <div className='flex-1 min-h-0 overflow-auto bg-slate-50 p-3 md:p-6'>
-          <ContributionTable />
+          <div className='space-y-6'>
+            <OverdueTaskList groupId={groupId} groupName={groupDetail?.name} />
+            <ContributionTable />
+          </div>
         </div>
       )}
     </div>

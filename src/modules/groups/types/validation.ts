@@ -1,29 +1,17 @@
 import * as yup from 'yup'
 
-/**
- * Create Group Form Schema
- */
+export interface CreateGroupFormData {
+  name: string
+  subjectOrProjectName: string
+}
+
 export const createGroupSchema = yup.object().shape({
   name: yup
     .string()
     .required('Tên nhóm là bắt buộc')
     .min(3, 'Tên nhóm phải có ít nhất 3 ký tự')
     .max(50, 'Tên nhóm không được quá 50 ký tự'),
-  category: yup.string().required('Danh mục là bắt buộc'),
-  maxMembers: yup
-    .number()
-    .transform(value => (Number.isNaN(value) ? undefined : value))
-    .required('Số lượng thành viên là bắt buộc')
-    .typeError('Vui lòng nhập một số hợp lệ')
-    .min(2, 'Số thành viên tối thiểu là 2')
-    .max(20, 'Số thành viên tối đa là 20')
-    .default(5),
-  groupType: yup
-    .number()
-    .transform(value => (Number.isNaN(value) ? 0 : value))
-    .oneOf([0, 1], 'Loại nhóm không hợp lệ')
-    .required('Loại nhóm là bắt buộc')
-    .default(0)
+  subjectOrProjectName: yup.string().required('Danh mục là bắt buộc')
 })
 
 /**
@@ -37,5 +25,4 @@ export const joinGroupSchema = yup.object().shape({
     .matches(/^[A-Z0-9]+$/, 'Mã tham gia chỉ chứa chữ in hoa và số')
 })
 
-export type CreateGroupFormData = yup.InferType<typeof createGroupSchema>
 export type JoinGroupFormData = yup.InferType<typeof joinGroupSchema>

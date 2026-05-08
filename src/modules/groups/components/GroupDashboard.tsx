@@ -74,6 +74,18 @@ export default function GroupDashboard() {
     return 'bg-slate-400'
   }
 
+  // HÀM TÍNH TOÁN TIẾN ĐỘ TỪ DATA THẬT
+  const calculateProgressPercent = (
+    totalTasks?: number,
+    totalTasksDone?: number
+  ) => {
+    const total = Number(totalTasks || 0)
+    const done = Number(totalTasksDone || 0)
+
+    if (total <= 0) return 0
+    return Math.floor((done / total) * 100)
+  }
+
   // Loading State
   if (isLoading) {
     return (
@@ -113,14 +125,14 @@ export default function GroupDashboard() {
       <div className='flex items-center justify-between mb-8'>
         <div>
           <h1 className='text-3xl font-bold text-slate-900 dark:text-slate-100'>
-            My Groups
+            Nhóm của tôi
           </h1>
           <p className='text-slate-600 dark:text-slate-400 mt-1'>
-            Manage your project groups and collaborations
+            Quản lý các nhóm và hoạt động cộng tác của bạn
           </p>
         </div>
 
-        <div className='flex gap-3'>
+        {/* <div className='flex gap-3'>
           <Button onClick={() => setIsCreateModalOpen(true)} className='gap-2'>
             <Plus className='h-4 w-4' />
             Tạo nhóm
@@ -141,7 +153,7 @@ export default function GroupDashboard() {
             <FileUp className='h-4 w-4' />
             Import
           </Button>
-        </div>
+        </div> */}
       </div>
 
       {/* Groups Grid */}
@@ -153,16 +165,23 @@ export default function GroupDashboard() {
                 const totalMemberCount = group.totalMemberCount ?? 0
                 const limitedUser = group.limitedUser ?? 0
 
+                // ÁP DỤNG HÀM TÍNH TOÁN Ở ĐÂY
+                const progressValue = calculateProgressPercent(
+                  group.totalTasks,
+                  group.totalTasksDone
+                )
+
                 return (
                   <Card className='hover:shadow-lg transition-shadow cursor-pointer group h-full'>
                     <CardHeader className='pb-3'>
                       <div className='flex items-start justify-between mb-2'>
+                        {/* Lấy majorType từ API thay vì category */}
                         <Badge variant='secondary' className='text-xs'>
-                          {group.category}
+                          {group.subjectOrProjectName || 'N/A'}
                         </Badge>
                         <TrendingUp
                           className={`h-4 w-4 ${
-                            group.progress >= 50
+                            progressValue >= 50
                               ? 'text-green-500'
                               : 'text-slate-400'
                           }`}
@@ -198,13 +217,13 @@ export default function GroupDashboard() {
                             Progress
                           </span>
                           <span className='font-bold text-slate-900 dark:text-slate-100'>
-                            {group.progress}%
+                            {progressValue}%
                           </span>
                         </div>
                         <Progress
-                          value={group.progress}
+                          value={progressValue}
                           className='h-2'
-                          indicatorClassName={getProgressColor(group.progress)}
+                          indicatorClassName={getProgressColor(progressValue)}
                         />
                       </div>
 
@@ -243,13 +262,12 @@ export default function GroupDashboard() {
             <User className='h-12 w-12 text-slate-400' />
           </div>
           <h3 className='text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2'>
-            No groups yet
+            Chưa có nhóm nào
           </h3>
           <p className='text-slate-600 dark:text-slate-400 mb-6 max-w-sm'>
-            Create your first group or join an existing one to start
-            collaborating on projects.
+            Hãy tham gia một lớp học để có thể tạo hoặc tham gia nhóm.
           </p>
-          <div className='flex gap-3'>
+          {/* <div className='flex gap-3'>
             <Button
               onClick={() => setIsCreateModalOpen(true)}
               className='gap-2'
@@ -265,7 +283,7 @@ export default function GroupDashboard() {
               <UserPlus className='h-4 w-4' />
               Join Group
             </Button>
-          </div>
+          </div> */}
         </div>
       )}
 
@@ -273,6 +291,7 @@ export default function GroupDashboard() {
       <CreateGroupModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
+        maxMembersPerGroup={10}
         onSuccess={() => refetch()}
       />
 

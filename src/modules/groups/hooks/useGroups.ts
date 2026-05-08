@@ -14,6 +14,7 @@ import {
   updateGroupMemberRoleAPI,
   updateGroupInfoAPI,
   updateGroupGithubRepoAPI,
+  deleteClassroomGroupAPI,
   type UpdateGroupInfoRequest,
   type UpdateGroupGithubRepoRequest,
   type UpdateGroupMemberRoleRequest
@@ -54,7 +55,6 @@ export const useGetGroupDetail = (groupId: number) => {
     queryFn: () => getGroupDetailAPI(groupId),
     // Chỉ gọi API khi groupId là 1 số hợp lệ (lớn hơn 0)
     enabled: typeof groupId === 'number' && groupId > 0
-    // staleTime: 1000 * 60 * 5 // Cache 5 phút cho đỡ gọi lại nhiều
   })
 }
 
@@ -120,6 +120,35 @@ export const useDeleteGroup = () => {
     mutationFn: (id: string) => deleteGroup(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: groupKeys.lists() })
+    }
+  })
+}
+
+export const useDeleteClassroomGroup = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      classroomId,
+      groupId
+    }: {
+      classroomId: number | string
+      groupId: number | string
+    }) => deleteClassroomGroupAPI(classroomId, groupId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: groupKeys.lists() })
+      queryClient.invalidateQueries({
+        queryKey: ['classroom-groups', 'groups', String(variables.classroomId)]
+      })
+      toast.success('Đã xóa nhóm thành công')
+    },
+    onError: (error: any) => {
+      toast.error('Xóa nhóm thất bại', {
+        description:
+          error?.response?.data?.error?.message ||
+          error?.response?.data?.message ||
+          'Không thể xóa nhóm. Vui lòng thử lại.'
+      })
     }
   })
 }
