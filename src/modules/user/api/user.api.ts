@@ -6,6 +6,8 @@ export interface UserProfileResponse {
   fullName?: string
   name?: string
   userName?: string
+  userRole?: string
+  role?: string
   phoneNumber?: string
   phone?: string
   email?: string

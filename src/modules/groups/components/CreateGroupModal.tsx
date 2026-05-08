@@ -1,83 +1,48 @@
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { yupResolver } from '@hookform/resolvers/yup'
 import { X, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select'
-import { useCreateGroup } from '../hooks/useGroups'
-import { GROUP_CATEGORIES } from '../types/group'
-import {
-  createGroupSchema,
-  type CreateGroupFormData
-} from '../types/validation'
+import type { CreateGroupRequest } from '../types/group.request'
+import { useCreateGroupForm } from '../hooks/useCreateGroupForm'
 
 interface CreateGroupModalProps {
   isOpen: boolean
   onClose: () => void
+  maxMembersPerGroup: number
   onSuccess?: () => void
+  onCreateGroup?: (payload: CreateGroupRequest) => Promise<unknown> | unknown
+  isSubmitting?: boolean
+  fixedSubjectName?: string
 }
 
 export default function CreateGroupModal({
   isOpen,
   onClose,
-  onSuccess
+  maxMembersPerGroup,
+  onSuccess,
+  onCreateGroup,
+  isSubmitting,
+  fixedSubjectName
 }: CreateGroupModalProps) {
-  const [selectedCategory, setSelectedCategory] = useState<string>('')
-  const [selectedGroupType, setSelectedGroupType] = useState<string>('0')
-  const { mutate: createGroup, isPending } = useCreateGroup()
+  const {
+    form,
+    onSubmit,
+    handleClose,
+    isSubmitting: formSubmitting
+  } = useCreateGroupForm({
+    fixedSubjectName,
+    maxMembersPerGroup,
+    onCreateGroup,
+    onSuccess,
+    onClose
+  })
+
+  const submitting = isSubmitting ?? formSubmitting
 
   const {
     register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-    setValue
-  } = useForm<CreateGroupFormData>({
-    resolver: yupResolver(createGroupSchema),
-    defaultValues: {
-      maxMembers: 5,
-      groupType: 0
-    }
-  })
-
-  const handleClose = () => {
-    reset()
-    setSelectedCategory('')
-    setSelectedGroupType('0')
-    onClose()
-  }
-
-  const onSubmit = (data: CreateGroupFormData) => {
-    const payload = {
-      name: data.name,
-      subjectOrProjectName: data.category,
-      limitedUser: data.maxMembers,
-      groupType: Number(data.groupType)
-    }
-
-    createGroup(payload, {
-      onSuccess: response => {
-        console.log('Group created:', response)
-        handleClose()
-        onSuccess?.()
-      },
-      onError: (error: any) => {
-        console.error('Create group error:', error)
-        alert(
-          error?.response?.data?.message ||
-            'Có lỗi xảy ra khi tạo nhóm. Vui lòng thử lại.'
-        )
-      }
-    })
-  }
+    formState: { errors }
+  } = form
 
   if (!isOpen) return null
 
@@ -95,16 +60,17 @@ export default function CreateGroupModal({
         <div className='flex items-center justify-between mb-6'>
           <h2 className='text-2xl font-bold text-slate-900'>Tạo nhóm mới</h2>
           <button
+            type='button'
             onClick={handleClose}
             className='text-slate-400 hover:text-slate-600 transition-colors'
-            disabled={isPending}
+            disabled={submitting}
           >
             <X className='h-5 w-5' />
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
+        <form onSubmit={onSubmit} className='space-y-4'>
           {/* Tên nhóm */}
           <div className='space-y-2'>
             <Label htmlFor='name'>
@@ -112,96 +78,28 @@ export default function CreateGroupModal({
             </Label>
             <Input
               id='name'
-              placeholder='Ví dụ: MERN Stack E-commerce'
+              placeholder='Ví dụ: Nhóm 1 - Đồ án Cuối kỳ'
               {...register('name')}
               className={errors.name ? 'border-red-500' : ''}
-              disabled={isPending}
+              disabled={submitting}
             />
             {errors.name && (
               <p className='text-xs text-red-500'>{errors.name.message}</p>
             )}
           </div>
 
-          {/* Danh mục */}
-          <div className='space-y-2'>
-            <Label htmlFor='category'>
-              Danh mục <span className='text-red-500'>*</span>
-            </Label>
-            <Select
-              value={selectedCategory}
-              onValueChange={value => {
-                setSelectedCategory(value)
-                setValue('category', value, { shouldValidate: true })
-              }}
-              disabled={isPending}
-            >
-              <SelectTrigger
-                className={errors.category ? 'border-red-500' : ''}
-              >
-                <SelectValue placeholder='Chọn danh mục dự án' />
-              </SelectTrigger>
-              <SelectContent>
-                {GROUP_CATEGORIES.map(category => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.category && (
-              <p className='text-xs text-red-500'>{errors.category.message}</p>
-            )}
-          </div>
-
-          <div className='space-y-2'>
-            <Label htmlFor='groupType'>
-              Loại nhóm <span className='text-red-500'>*</span>
-            </Label>
-            <Select
-              value={selectedGroupType}
-              onValueChange={value => {
-                setSelectedGroupType(value)
-                setValue('groupType', Number(value), { shouldValidate: true })
-              }}
-              disabled={isPending}
-            >
-              <SelectTrigger
-                id='groupType'
-                className={errors.groupType ? 'border-red-500' : ''}
-              >
-                <SelectValue placeholder='Chọn loại nhóm' />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value='0'>IT</SelectItem>
-                <SelectItem value='1'>General</SelectItem>
-              </SelectContent>
-            </Select>
-            {errors.groupType && (
-              <p className='text-xs text-red-500'>{errors.groupType.message}</p>
-            )}
-          </div>
-
-          {/* Max Members - Giữ nguyên giao diện */}
-          <div className='space-y-2'>
-            <Label htmlFor='maxMembers'>Số thành viên tối đa</Label>
-            <Input
-              id='maxMembers'
-              type='number'
-              min={2}
-              max={20}
-              {...register('maxMembers', { valueAsNumber: true })}
-              className={errors.maxMembers ? 'border-red-500' : ''}
-              disabled={isPending}
-            />
-            {errors.maxMembers && (
-              <p className='text-xs text-red-500'>
-                {errors.maxMembers.message}
-              </p>
-            )}
-            <p className='text-xs text-slate-500'>
-              Số lượng thành viên tối đa có thể tham gia nhóm (2-20)
-            </p>
-          </div>
+          {fixedSubjectName && (
+            <div className='space-y-2'>
+              <Label htmlFor='category'>Môn học</Label>
+              <Input
+                id='category'
+                value={fixedSubjectName}
+                readOnly
+                disabled={submitting}
+                className='bg-slate-50 text-slate-600 cursor-not-allowed'
+              />
+            </div>
+          )}
 
           {/* Actions */}
           <div className='flex gap-3 pt-4'>
@@ -210,12 +108,12 @@ export default function CreateGroupModal({
               variant='outline'
               onClick={handleClose}
               className='flex-1'
-              disabled={isPending}
+              disabled={submitting}
             >
               Hủy
             </Button>
-            <Button type='submit' className='flex-1' disabled={isPending}>
-              {isPending ? (
+            <Button type='submit' className='flex-1' disabled={submitting}>
+              {submitting ? (
                 <>
                   <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                   Đang tạo...

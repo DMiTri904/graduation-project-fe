@@ -12,6 +12,9 @@ interface GroupListItemDto {
   isActive: boolean
   limitedUser?: number
   totalMemberCount?: number
+  majorType?: string
+  totalTasks?: number
+  totalTasksDone?: number
 }
 
 interface GroupListResponseDto {
@@ -32,14 +35,17 @@ const mapGroupItemToGroup = (item: GroupListItemDto): Group => ({
   limitedUser: item.limitedUser ?? 0,
   memberCount: item.totalMemberCount ?? 0,
   maxMembers: item.limitedUser ?? 0,
-  progress: 100
+  majorType: item.majorType,
+  subjectOrProjectName: item.subjectOrProjectName,
+  totalTasks: item.totalTasks ?? 0,
+  totalTasksDone: item.totalTasksDone ?? 0
 })
 
 /**
  * Get all groups (Mock API)
  */
 export const getGroups = async (): Promise<Group[]> => {
-  const response = await api.get<GroupListResponseDto>('/group')
+  const response = await api.get<GroupListResponseDto>('/group/my-groups')
   const payload = response.data
 
   if (!payload?.isSuccess) {
@@ -72,7 +78,6 @@ export const getGroupById = async (id: string): Promise<Group | null> => {
 }
 
 export const createGroupAPI = async (body: CreateGroupRequest) => {
-  // Thay url '/api/group' bằng đúng endpoint trên Swagger của bạn
   const response = await api.post('/group', body)
   return response.data
 }
@@ -177,4 +182,11 @@ export const joinGroup = async (payload: JoinGroupPayload): Promise<Group> => {
  */
 export const deleteGroup = async (id: string): Promise<void> => {
   await api.delete(`/group/${id}`)
+}
+
+export const deleteClassroomGroupAPI = async (
+  classroomId: number | string,
+  groupId: number | string
+): Promise<void> => {
+  await api.delete(`/classroom/${classroomId}/groups/${groupId}`)
 }

@@ -28,6 +28,7 @@ import type { Card } from '../types/board'
 import { useDeleteTask, useUpdateTask } from '../hooks/useBoardHooks'
 import { useTaskDetail } from '../hooks/useTaskDetail'
 import TaskCommentSection from '@/modules/comments/components/TaskCommentSection'
+import TaskHistoryModal from '@/modules/tasks/components/TaskHistoryModal'
 import { getPriorityConfig, PRIORITY_OPTIONS } from '~/utils/priority'
 import { toast } from 'sonner'
 import { formatDueDateForSubmit } from '@/utils/boardFormatters'
@@ -40,6 +41,7 @@ import {
   MessageSquare,
   Paperclip,
   ListTodo,
+  History,
   X
 } from 'lucide-react'
 
@@ -95,6 +97,7 @@ export default function CardDetailSheet({
   const [isEditingTitle, setIsEditingTitle] = useState(false)
   const [isEditingDescription, setIsEditingDescription] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false)
 
   const toInputDate = (dateValue?: string) => {
     if (!dateValue) return ''
@@ -311,6 +314,18 @@ export default function CardDetailSheet({
                   {editForm.title || 'Untitled'}
                 </h2>
               )}
+
+              <Button
+                type='button'
+                variant='outline'
+                size='sm'
+                onClick={() => setIsHistoryOpen(true)}
+                disabled={taskId <= 0}
+                className='shrink-0'
+              >
+                <History className='mr-2 h-4 w-4' />
+                Xem lịch sử
+              </Button>
             </div>
             <Button
               variant='ghost'
@@ -563,6 +578,14 @@ export default function CardDetailSheet({
           </div>
         </SheetContent>
       </Sheet>
+
+      <TaskHistoryModal
+        taskId={taskId}
+        taskTitle={taskDetail.title}
+        isOpen={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+        groupId={groupId}
+      />
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>

@@ -17,3 +17,9 @@ export const downloadReportAPI = async (reportId: ReportId) => {
     responseType: 'blob'
   })
 }
+
+export const exportAllGroupsAPI = async (classroomId: number | string) => {
+  return api.post(`/classroom/${classroomId}/export-all-groups`, undefined, {
+    responseType: 'blob'
+  })
+}

@@ -6,9 +6,13 @@ export interface Group {
   limitedUser: number
   memberCount: number
   maxMembers: number
-  progress: number
+  progress?: number
   inviteCode?: string
   createdAt?: string
+  subjectOrProjectName?: string
+  majorType?: string
+  totalTasks?: number
+  totalTasksDone?: number
 }
 
 export interface CreateGroupPayload {

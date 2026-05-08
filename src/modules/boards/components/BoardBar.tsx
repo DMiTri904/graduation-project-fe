@@ -159,6 +159,13 @@ export default function BoardBar({
           <h1 className='min-w-0 truncate text-lg font-bold tracking-tight text-slate-900 md:text-xl'>
             {groupDetail?.name || board?.title || 'Loading...'}
           </h1>
+          {groupDetail?.subjectOrProjectName && (
+            <div className='flex items-center gap-1.5 text-sm font-medium text-slate-500 mt-0.5'>
+              <span className='truncate'>
+                {groupDetail.subjectOrProjectName}
+              </span>
+            </div>
+          )}
 
           <ManageMembersModal
             groupId={resolvedGroupId}
@@ -217,7 +224,7 @@ export default function BoardBar({
         </div>
 
         <div className='flex items-center gap-2 overflow-x-auto px-0.5 pb-1 md:overflow-visible md:px-0 md:pb-0'>
-          <CreateCardDialog groupId={resolvedGroupId} />
+          {/* <CreateCardDialog groupId={resolvedGroupId} /> */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -264,20 +271,20 @@ export default function BoardBar({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button
+          {/* <Button
             variant='outline'
             className='h-9 shrink-0 text-slate-600 border-slate-200 hover:bg-slate-50 font-medium shadow-sm'
           >
             <ArrowUpDown className='mr-2 h-4 w-4 text-slate-500' />
             Sort
-          </Button>
-          <Button
+          </Button> */}
+          {/* <Button
             variant='outline'
             size='icon'
             className='h-9 w-9 shrink-0 text-slate-600 border-slate-200 hover:bg-slate-50 shadow-sm'
           >
             <MoreHorizontal className='h-4 w-4 text-slate-500' />
-          </Button>
+          </Button> */}
         </div>
       </div>
     </div>

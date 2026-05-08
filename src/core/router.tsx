@@ -11,6 +11,9 @@ import MyClassesPage from '~/modules/classes/pages/MyClassesPage'
 import ClassDetailPage from '~/modules/classes/pages/ClassDetailPage'
 import ProfilePage from '~/modules/user/pages/ProfilePage'
 import ChangePasswordPage from '~/modules/user/pages/ChangePasswordPage'
+import TaskHistoryPage from '~/modules/tasks/pages/TaskHistoryPage'
+import ProtectedRoute from '@/core/ProtectedRoute'
+import RoleRedirect from '@/core/RoleRedirect'
 
 export const router = createBrowserRouter([
   // --- PUBLIC ROUTES (Không cần Layout) ---
@@ -31,52 +34,62 @@ export const router = createBrowserRouter([
   {
     path: '/',
     element: (
-      <MainLayout>
-        {/* Vừa vào web sẽ tự động đá sang trang Danh sách dự án */}
-        {/* Nếu bạn có Dashboard riêng, thay <Navigate> bằng <DashboardPage /> */}
-        <Navigate to='/groups' replace />
-      </MainLayout>
+      <ProtectedRoute allowedRoles={['Student', 'Teacher', 'Admin']}>
+        <MainLayout>
+          <RoleRedirect />
+        </MainLayout>
+      </ProtectedRoute>
     )
   },
   {
     path: '/groups',
     element: (
-      <MainLayout>
-        <GroupsPage />
-      </MainLayout>
+      <ProtectedRoute allowedRoles={['Student', 'Teacher']}>
+        <MainLayout>
+          <GroupsPage />
+        </MainLayout>
+      </ProtectedRoute>
     )
   },
   {
     path: '/groups/:id',
     element: (
-      <MainLayout>
-        {/* Đưa BoardDetail vào đây để nó nhận được cái :id trên thanh địa chỉ */}
-        <BoardDetail />
-      </MainLayout>
+      <ProtectedRoute allowedRoles={['Student', 'Teacher']}>
+        <MainLayout>
+          {/* Đưa BoardDetail vào đây để nó nhận được cái :id trên thanh địa chỉ */}
+          <BoardDetail />
+        </MainLayout>
+      </ProtectedRoute>
     )
   },
   {
     path: '/classes',
     element: (
-      <MainLayout>
-        <MyClassesPage />
-      </MainLayout>
+      <ProtectedRoute allowedRoles={['Student', 'Teacher']}>
+        <MainLayout>
+          <MyClassesPage />
+        </MainLayout>
+      </ProtectedRoute>
     )
   },
   {
     path: '/classes/:id',
     element: (
-      <MainLayout>
-        <ClassDetailPage />
-      </MainLayout>
+      <ProtectedRoute allowedRoles={['Student', 'Teacher']}>
+        <MainLayout>
+          <ClassDetailPage />
+        </MainLayout>
+      </ProtectedRoute>
     )
   },
   {
     path: '/account-management',
     element: (
-      <MainLayout>
-        <AccountManagementPage />
-      </MainLayout>
+      <ProtectedRoute allowedRoles={['Admin']}>
+        <MainLayout>
+          <AccountManagementPage />
+        </MainLayout>
+      </ProtectedRoute>
     )
   },
   {
@@ -92,6 +105,14 @@ export const router = createBrowserRouter([
     element: (
       <MainLayout>
         <ChangePasswordPage />
+      </MainLayout>
+    )
+  },
+  {
+    path: '/tasks/:groupId/:taskId/history',
+    element: (
+      <MainLayout>
+        <TaskHistoryPage />
       </MainLayout>
     )
   }

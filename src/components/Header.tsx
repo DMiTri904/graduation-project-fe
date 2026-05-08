@@ -39,6 +39,7 @@ export default function Header({
   const profileData = data?.data
   const tokenUser = getCurrentUserFromToken()
 
+  // 1. Xác định Tên
   const displayName =
     userName ||
     profileData?.fullName ||
@@ -47,6 +48,7 @@ export default function Header({
     tokenUser.fullName ||
     'User'
 
+  // 2. Xác định ID (UserCode / MSSV)
   const displayStudentId =
     studentId ||
     profileData?.studentId ||
@@ -55,6 +57,9 @@ export default function Header({
     tokenUser.studentId ||
     '-'
 
+  // 3. Xác định Role (Thêm mới để xử lý hiển thị chữ Teacher/Student)
+  const currentRole = profileData?.userRole || tokenUser.systemRole || 'Student'
+  // 4. Xác định Avatar
   const displayAvatar =
     avatarUrl ||
     profileData?.avatarUrl ||
@@ -62,6 +67,7 @@ export default function Header({
     getStoredAvatarUrl() ||
     tokenUser.avatarUrl ||
     ''
+
   const initials = getAvatarFallback(displayName)
 
   const Maps = (path: string) => {
@@ -79,32 +85,32 @@ export default function Header({
       <div className='flex min-w-0 flex-1 items-center gap-2'>
         <div className='lg:hidden'>{mobileSidebarTrigger}</div>
 
-        <div className='relative w-full max-w-none md:max-w-sm lg:max-w-md'>
+        {/* <div className='relative w-full max-w-none md:max-w-sm lg:max-w-md'>
           <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-slate-400' />
           <Input
             type='text'
             placeholder='Search tasks, groups, or files...'
             className='h-9 pl-9 bg-slate-50 border-none'
           />
-        </div>
+        </div> */}
       </div>
 
       <div className='flex shrink-0 items-center gap-1 md:gap-3'>
-        <Button
+        {/* <Button
           variant='ghost'
           size='icon'
           className='hidden md:inline-flex text-slate-500 rounded-full'
         >
           <Moon className='h-5 w-5' />
-        </Button>
+        </Button> */}
         <NotificationPopover />
-        <Button
+        {/* <Button
           variant='ghost'
           size='icon'
           className='hidden md:inline-flex text-slate-500 rounded-full'
         >
           <HelpCircle className='h-5 w-5' />
-        </Button>
+        </Button> */}
 
         <div className='hidden sm:block h-8 w-px bg-slate-200 mx-1 md:mx-2'></div>
 
@@ -118,8 +124,11 @@ export default function Header({
                 <p className='truncate text-sm font-semibold leading-none'>
                   {displayName}
                 </p>
-                <p className='mt-1 truncate text-xs text-slate-500 lg:block hidden'>
-                  Student ID: {displayStudentId}
+                <p className='text-sm text-gray-500'>
+                  {currentRole?.toLowerCase() === 'teacher'
+                    ? 'Teacher ID'
+                    : 'Student ID'}
+                  : {displayStudentId}
                 </p>
               </div>
               <Avatar className='shrink-0'>

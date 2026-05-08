@@ -2,21 +2,28 @@ import { Button } from '@/components/ui/button'
 import { useNavigate, useLocation } from 'react-router-dom'
 import Header from '@/components/Header'
 import { Menu } from 'lucide-react'
+import LogoImage from '@/assets/logo-DHNT-300x300.png'
+
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle
 } from '@/components/ui/sheet'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useGetMe, type UserRole } from '@/hooks/useGetMe'
 
-const NAV_ITEMS = [
-  { label: 'Dashboard', path: '/' },
-  { label: 'Danh sách nhóm', path: '/groups' },
-  { label: 'Danh sách lớp', path: '/classes' },
-  { label: 'Quản lý tài khoản', path: '/account-management' }
-  // { label: 'Settings', path: '/settings' },
-]
+const ROLE_NAVIGATION: Record<
+  Exclude<UserRole, ''>,
+  Array<{ label: string; path: string }>
+> = {
+  Student: [
+    { label: 'Danh sách nhóm', path: '/groups' },
+    { label: 'Danh sách lớp', path: '/classes' }
+  ],
+  Teacher: [{ label: 'Danh sách lớp', path: '/classes' }],
+  Admin: [{ label: 'Quản lý tài khoản', path: '/account-management' }]
+}
 
 export default function MainLayout({
   children
@@ -24,13 +31,18 @@ export default function MainLayout({
   children: React.ReactNode
 }) {
   const navigate = useNavigate()
+  const { data } = useGetMe()
+  const role = (data?.data?.role || '') as UserRole
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  // Lấy đường dẫn hiện tại để check active state
   const { pathname } = useLocation()
+  const navItems = useMemo(() => {
+    if (!role || !(role in ROLE_NAVIGATION)) return []
+    return ROLE_NAVIGATION[role as Exclude<UserRole, ''>]
+  }, [role])
 
   const renderNavigation = (onItemClick?: () => void) => (
     <nav className='space-y-1'>
-      {NAV_ITEMS.map(item => {
+      {navItems.map(item => {
         const isActive =
           item.path === '/'
             ? pathname === '/'
@@ -64,22 +76,19 @@ export default function MainLayout({
         <div>
           {/* Logo */}
           <div className='flex items-center gap-3 px-2 mb-8'>
-            <div className='w-8 h-8 bg-blue-600 rounded-md'></div>
+            <div className='w-8 h-8 rounded-md'>
+              <img
+                src={LogoImage}
+                alt='NTU Group Logo'
+                className='w-full h-full object-cover rounded-md'
+              />
+            </div>
             <div>
               <h2 className='font-bold text-base'>NTU Group</h2>
               <p className='text-xs text-slate-500'>Project Management</p>
             </div>
           </div>
           {renderNavigation()}
-        </div>
-
-        {/* Upcoming Deadline Card */}
-        <div className='bg-slate-50 border rounded-xl p-4'>
-          <h4 className='text-xs font-semibold text-blue-600 mb-2 uppercase'>
-            Upcoming Deadline
-          </h4>
-          <p className='text-sm font-medium mb-1'>Capstone Draft v1</p>
-          <p className='text-xs text-slate-500'>Due in 2 days</p>
         </div>
       </aside>
 

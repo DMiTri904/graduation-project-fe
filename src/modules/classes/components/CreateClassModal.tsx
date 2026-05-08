@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import { X, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -17,95 +16,33 @@ import {
   DialogTitle
 } from '@/components/ui/dialog'
 import { SUBJECTS } from '../types/class'
-
-interface CreateClassModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onSuccess?: () => void
-}
+import { useCreateClassForm } from '../hooks/useCreateClassForm'
+import {
+  MAJOR_TYPE_OPTIONS,
+  type CreateClassFormData,
+  type CreateClassModalProps
+} from '../types/createClassForm'
 
 export default function CreateClassModal({
   isOpen,
   onClose,
   onSuccess
 }: CreateClassModalProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [formData, setFormData] = useState({
-    name: '',
-    subject: '',
-    maxStudents: 50
-  })
-  const [errors, setErrors] = useState({
-    name: '',
-    subject: '',
-    maxStudents: ''
-  })
-
-  const validateForm = () => {
-    const newErrors = {
-      name: '',
-      subject: '',
-      maxStudents: ''
-    }
-
-    if (!formData.name.trim()) {
-      newErrors.name = 'Tên lớp học là bắt buộc'
-    } else if (formData.name.trim().length < 3) {
-      newErrors.name = 'Tên lớp học phải có ít nhất 3 ký tự'
-    }
-
-    if (!formData.subject) {
-      newErrors.subject = 'Vui lòng chọn môn học'
-    }
-
-    if (formData.maxStudents < 10 || formData.maxStudents > 100) {
-      newErrors.maxStudents = 'Số lượng sinh viên phải từ 10 đến 100'
-    }
-
-    setErrors(newErrors)
-    return !newErrors.name && !newErrors.subject && !newErrors.maxStudents
-  }
+  const { formData, setFormData, errors, isSubmitting, resetForm, submitForm } =
+    useCreateClassForm()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!validateForm()) return
+    const isSuccess = await submitForm()
+    if (!isSuccess) return
 
-    setIsSubmitting(true)
-
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500))
-
-    // Generate random join code
-    const joinCode =
-      formData.name.substring(0, 3).toUpperCase() +
-      Math.random().toString(36).substring(2, 8).toUpperCase()
-
-    console.log('Created class:', {
-      ...formData,
-      joinCode
-    })
-
-    setIsSubmitting(false)
     handleClose()
     onSuccess?.()
-
-    alert(
-      `Lớp học "${formData.name}" đã được tạo thành công!\nMã tham gia: ${joinCode}`
-    )
   }
 
   const handleClose = () => {
-    setFormData({
-      name: '',
-      subject: '',
-      maxStudents: 50
-    })
-    setErrors({
-      name: '',
-      subject: '',
-      maxStudents: ''
-    })
+    resetForm()
     onClose()
   }
 
@@ -127,29 +64,33 @@ export default function CreateClassModal({
             <Input
               id='name'
               placeholder='Ví dụ: Thực hành Web - Ca 1'
-              value={formData.name}
-              onChange={e => setFormData({ ...formData, name: e.target.value })}
-              className={errors.name ? 'border-red-500' : ''}
+              value={formData.className}
+              onChange={e =>
+                setFormData({ ...formData, className: e.target.value })
+              }
+              className={errors.className ? 'border-red-500' : ''}
               disabled={isSubmitting}
             />
-            {errors.name && (
-              <p className='text-xs text-red-500'>{errors.name}</p>
+            {errors.className && (
+              <p className='text-xs text-red-500'>{errors.className}</p>
             )}
           </div>
 
           {/* Subject */}
-          <div className='space-y-2'>
+          {/* <div className='space-y-2'>
             <Label htmlFor='subject'>
               Môn học <span className='text-red-500'>*</span>
             </Label>
             <Select
-              value={formData.subject}
+              value={formData.subjectName}
               onValueChange={value =>
-                setFormData({ ...formData, subject: value })
+                setFormData({ ...formData, subjectName: value })
               }
               disabled={isSubmitting}
             >
-              <SelectTrigger className={errors.subject ? 'border-red-500' : ''}>
+              <SelectTrigger
+                className={errors.subjectName ? 'border-red-500' : ''}
+              >
                 <SelectValue placeholder='Chọn môn học' />
               </SelectTrigger>
               <SelectContent>
@@ -160,34 +101,94 @@ export default function CreateClassModal({
                 ))}
               </SelectContent>
             </Select>
-            {errors.subject && (
-              <p className='text-xs text-red-500'>{errors.subject}</p>
+            {errors.subjectName && (
+              <p className='text-xs text-red-500'>{errors.subjectName}</p>
+            )}
+          </div> */}
+          <div className='space-y-2'>
+            <Label htmlFor='subjectName'>
+              Môn học <span className='text-red-500'>*</span>
+            </Label>
+            <Input
+              id='subjectName'
+              placeholder='Ví dụ: Lập trình Web, Kế toán tài chính...'
+              value={formData.subjectName}
+              onChange={e =>
+                setFormData({ ...formData, subjectName: e.target.value })
+              }
+              className={errors.subjectName ? 'border-red-500' : ''}
+              disabled={isSubmitting}
+            />
+            {errors.subjectName && (
+              <p className='text-xs text-red-500'>{errors.subjectName}</p>
             )}
           </div>
 
-          {/* Max Students */}
+          {/* Major Type */}
           <div className='space-y-2'>
-            <Label htmlFor='maxStudents'>Số lượng sinh viên tối đa</Label>
+            <Label htmlFor='majorType'>
+              Phân loại chuyên ngành <span className='text-red-500'>*</span>
+            </Label>
+            <Select
+              value={formData.majorType}
+              onValueChange={value =>
+                setFormData({
+                  ...formData,
+                  majorType: value as CreateClassFormData['majorType']
+                })
+              }
+              disabled={isSubmitting}
+            >
+              <SelectTrigger
+                id='majorType'
+                className={errors.majorType ? 'border-red-500' : ''}
+              >
+                <SelectValue placeholder='Chọn phân loại chuyên ngành' />
+              </SelectTrigger>
+              <SelectContent>
+                {MAJOR_TYPE_OPTIONS.map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.majorType && (
+              <p className='text-xs text-red-500'>{errors.majorType}</p>
+            )}
+            <p className='text-xs text-slate-500'>
+              Lớp IT sẽ yêu cầu sinh viên liên kết GitHub trong các bước sau.
+            </p>
+          </div>
+
+          {/* Max Members Per Group */}
+          <div className='space-y-2'>
+            <Label htmlFor='maxMembersPerGroup'>
+              Số lượng sinh viên tối đa mỗi nhóm{' '}
+              <span className='text-red-500'>*</span>
+            </Label>
             <Input
-              id='maxStudents'
+              id='maxMembersPerGroup'
               type='number'
-              min={10}
-              max={100}
-              value={formData.maxStudents}
+              min={2}
+              max={10}
+              value={formData.maxMembersPerGroup}
               onChange={e =>
                 setFormData({
                   ...formData,
-                  maxStudents: parseInt(e.target.value) || 50
+                  maxMembersPerGroup: parseInt(e.target.value, 10) || 2
                 })
               }
-              className={errors.maxStudents ? 'border-red-500' : ''}
+              className={errors.maxMembersPerGroup ? 'border-red-500' : ''}
               disabled={isSubmitting}
             />
-            {errors.maxStudents && (
-              <p className='text-xs text-red-500'>{errors.maxStudents}</p>
+            {errors.maxMembersPerGroup && (
+              <p className='text-xs text-red-500'>
+                {errors.maxMembersPerGroup}
+              </p>
             )}
             <p className='text-xs text-slate-500'>
-              Số lượng sinh viên tối đa có thể tham gia lớp học (10-100)
+              Giá trị hợp lệ từ 2 đến 10 sinh viên/nhóm.
             </p>
           </div>
 
