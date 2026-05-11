@@ -35,7 +35,7 @@ export const useExportAllGroups = () => {
     try {
       const response = await exportAllGroupsAPI(classroomId)
       const blob = response.data as Blob
-      const fileName = `Report_${normalizeFileName(className)}.xlsx`
+      const fileName = `Report_${normalizeFileName(className)}.zip`
       downloadBlob(blob, fileName)
     } catch (err: any) {
       const message =

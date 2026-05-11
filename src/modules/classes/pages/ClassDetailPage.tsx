@@ -393,7 +393,7 @@ export default function ClassDetailPage() {
                 </div>
               </div>
 
-              <div className='flex items-center gap-3 p-3 bg-slate-50 rounded-lg'>
+              {/* <div className='flex items-center gap-3 p-3 bg-slate-50 rounded-lg'>
                 <div className='p-2 bg-amber-100 rounded-lg'>
                   <UserCircle className='h-5 w-5 text-amber-600' />
                 </div>
@@ -403,7 +403,7 @@ export default function ClassDetailPage() {
                     {ungroupedStudentCount}
                   </p>
                 </div>
-              </div>
+              </div> */}
             </div>
           </CardContent>
         </Card>

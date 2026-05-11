@@ -72,7 +72,13 @@ const NotificationItem = ({
   )
 }
 
-export default function NotificationPopover() {
+interface NotificationPopoverProps {
+  extraUnreadCount?: number
+}
+
+export default function NotificationPopover({
+  extraUnreadCount = 0
+}: NotificationPopoverProps) {
   const { data = [], isLoading } = useGetNotifications()
   const { handleNotificationClick, isPending: isMarkingSingle } =
     useNotificationClick()
@@ -88,6 +94,7 @@ export default function NotificationPopover() {
     item => item.isRead === false
   )
   const unreadCount = unreadNotifications.length
+  const displayUnreadCount = Math.max(0, unreadCount + extraUnreadCount)
 
   return (
     <Popover>
@@ -100,9 +107,9 @@ export default function NotificationPopover() {
           aria-label='Thông báo'
         >
           <Bell className='h-5 w-5' />
-          {unreadCount > 0 && (
+          {displayUnreadCount > 0 && (
             <Badge className='absolute justify-center items-center -right-1 -top-1 h-5 min-w-5 rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white hover:bg-red-500'>
-              {unreadCount > 99 ? '99+' : unreadCount}
+              {displayUnreadCount > 99 ? '99+' : displayUnreadCount}
             </Badge>
           )}
         </Button>
@@ -118,7 +125,7 @@ export default function NotificationPopover() {
               size='sm'
               className='h-8 text-xs text-blue-600 hover:text-blue-700'
               onClick={() => markAllAsRead()}
-              disabled={isMarkingAll || unreadCount === 0}
+              disabled={isMarkingAll || displayUnreadCount === 0}
             >
               {isMarkingAll ? 'Đang xử lý...' : 'Đánh dấu tất cả đã đọc'}
             </Button>
