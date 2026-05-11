@@ -19,6 +19,7 @@ import { getCurrentUserFromToken } from '@/lib/token'
 import NotificationPopover from '@/modules/notification/components/NotificationPopover'
 import { useUserProfile } from '@/modules/user/hook/user.hook'
 import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 
 interface HeaderProps {
@@ -38,6 +39,7 @@ export default function Header({
   const { data } = useUserProfile()
   const profileData = data?.data
   const tokenUser = getCurrentUserFromToken()
+  const [extraUnreadCount, setExtraUnreadCount] = useState(0)
 
   // 1. Xác định Tên
   const displayName =
@@ -80,6 +82,18 @@ export default function Header({
     navigate('/login')
   }
 
+  useEffect(() => {
+    const handleNewNotification = () => {
+      setExtraUnreadCount(count => count + 1)
+    }
+
+    window.addEventListener('new_notification', handleNewNotification)
+
+    return () => {
+      window.removeEventListener('new_notification', handleNewNotification)
+    }
+  }, [])
+
   return (
     <header className='h-16 border-b border-slate-200 flex items-center justify-between gap-2 px-3 md:px-6 shrink-0'>
       <div className='flex min-w-0 flex-1 items-center gap-2'>
@@ -103,7 +117,7 @@ export default function Header({
         >
           <Moon className='h-5 w-5' />
         </Button> */}
-        <NotificationPopover />
+        <NotificationPopover extraUnreadCount={extraUnreadCount} />
         {/* <Button
           variant='ghost'
           size='icon'
