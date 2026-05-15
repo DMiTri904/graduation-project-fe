@@ -58,11 +58,15 @@ const unwrapEnvelope = <T>(payload: ApiEnvelope<T> | T): T => {
 export const joinClassApi = async (
   payload: JoinClassRequest
 ): Promise<JoinClassResponse> => {
-  const response = await api.post<
-    ApiEnvelope<JoinClassResponse> | JoinClassResponse
-  >('/classroom/join', payload)
+  try {
+    const response = await api.post<
+      ApiEnvelope<JoinClassResponse> | JoinClassResponse
+    >('/classroom/join', payload)
 
-  return unwrapEnvelope<JoinClassResponse>(response.data)
+    return unwrapEnvelope<JoinClassResponse>(response.data)
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || 'Tham gia lớp thất bại')
+  }
 }
 
 export const regenerateInviteCodeApi = async (

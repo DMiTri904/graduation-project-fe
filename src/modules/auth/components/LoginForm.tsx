@@ -48,26 +48,26 @@ export const LoginForm = ({
               <img src={LogoImage} alt='Logo' className='w-30 h-30' />
             </div>
             <h1 className='text-2xl sm:text-3xl font-bold text-gray-800 mb-2 tracking-tight'>
-              Welcome Back
+              Chào mừng trở lại
             </h1>
             <p className='text-sm sm:text-base text-gray-600 leading-relaxed'>
-              Sign in to continue to your account
+              Đăng nhập để tiếp tục
             </p>
           </div>
 
           {/* Form */}
           <form className='space-y-1' onSubmit={handleSubmit(onSubmit)}>
-            {/* MSSV Field (Đã sửa từ Email) */}
+            {/* MSSV Field  */}
             <div className='space-y-2'>
               <Label htmlFor='mssv' className='text-gray-700'>
-                MSSV
+                Mã số
               </Label>
               <div className='relative'>
                 <User className='absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400' />
                 <Input
                   id='mssv'
                   type='text'
-                  placeholder='Enter your MSSV'
+                  placeholder='Nhập mã số của bạn'
                   className={`pl-10 h-11 ${
                     errors.mssv
                       ? 'border-red-500 focus-visible:ring-red-500'
@@ -89,14 +89,14 @@ export const LoginForm = ({
             {/* Password Field */}
             <div className='space-y-2'>
               <Label htmlFor='password' className='text-gray-700'>
-                Password
+                Mật khẩu
               </Label>
               <div className='relative'>
                 <Lock className='absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400' />
                 <Input
                   id='password'
                   type={showPassword ? 'text' : 'password'}
-                  placeholder='Enter your password'
+                  placeholder='Nhập mật khẩu của bạn'
                   className={`pl-10 pr-10 h-11 ${
                     errors.password
                       ? 'border-red-500 focus-visible:ring-red-500'
@@ -128,13 +128,13 @@ export const LoginForm = ({
               </div>
             </div>
 
-            {/* Forgot Password */}
+            {/*Quên mật khẩu?*/}
             <div className='flex justify-end'>
               <Link
                 to='/forgot-password'
                 className='text-sm text-blue-600 hover:text-blue-700 hover:underline transition-colors'
               >
-                Forgot Password?
+                Quên mật khẩu?
               </Link>
             </div>
 
@@ -148,10 +148,10 @@ export const LoginForm = ({
               {loading ? (
                 <div className='flex items-center justify-center gap-2'>
                   <div className='w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin'></div>
-                  <span>Processing...</span>
+                  <span>Đang xử lý...</span>
                 </div>
               ) : (
-                'Sign In'
+                'Đăng nhập'
               )}
             </Button>
           </form>

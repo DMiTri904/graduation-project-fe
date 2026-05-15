@@ -23,6 +23,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from '@/components/ui/alert-dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog'
 import { useBoardStore } from '../stores/useBoardStore'
 import type { Card } from '../types/board'
 import { useDeleteTask, useUpdateTask } from '../hooks/useBoardHooks'
@@ -32,6 +40,15 @@ import TaskHistoryModal from '@/modules/tasks/components/TaskHistoryModal'
 import { getPriorityConfig, PRIORITY_OPTIONS } from '~/utils/priority'
 import { toast } from 'sonner'
 import { formatDueDateForSubmit } from '@/utils/boardFormatters'
+import AIAssistant from '@/modules/chatbot/components/AIAssistant'
+import SubtaskPreview from '@/modules/chatbot/components/SubtaskPreview'
+import {
+  extractEstimate,
+  parseSubtasks
+} from '@/modules/chatbot/hooks/useChatbot'
+import type { AIActionType } from '@/modules/chatbot/api/chatbotApi'
+import type { ChatbotResult } from '@/modules/chatbot/hooks/useChatbot'
+import ReactMarkdown from 'react-markdown'
 import {
   Trash2,
   User,
@@ -98,6 +115,11 @@ export default function CardDetailSheet({
   const [isEditingDescription, setIsEditingDescription] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isHistoryOpen, setIsHistoryOpen] = useState(false)
+  const [aiSubtasks, setAiSubtasks] = useState<string[]>([])
+  const [isEstimateOpen, setIsEstimateOpen] = useState(false)
+  const [estimateText, setEstimateText] = useState('')
+  const [estimateSummary, setEstimateSummary] = useState('')
+  const [estimateDays, setEstimateDays] = useState<number | null>(null)
 
   const toInputDate = (dateValue?: string) => {
     if (!dateValue) return ''
@@ -271,6 +293,70 @@ export default function CardDetailSheet({
     }
   }
 
+  const addDaysToDate = (days: number): string => {
+    const date = new Date()
+    date.setDate(date.getDate() + days)
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  const parsePriority = (content: string): 'low' | 'medium' | 'high' => {
+    const normalized = content.toLowerCase()
+
+    if (/(high|cao|khẩn|urgent)/.test(normalized)) return 'high'
+    if (/(low|thấp|nhẹ)/.test(normalized)) return 'low'
+
+    return 'medium'
+  }
+
+  const handleApplySubtasks = (markdown: string) => {
+    if (!markdown) return
+
+    setEditForm(prev => ({
+      ...prev,
+      description: prev.description
+        ? `${prev.description}\n${markdown}`
+        : markdown
+    }))
+    setIsEditingDescription(false)
+    setAiSubtasks([])
+  }
+
+  const handleAIResult = (result: ChatbotResult) => {
+    if (!result?.rawText) return
+
+    const content = result.rawText
+    const action = result.actionType
+
+    if (action === 'description') {
+      setEditForm(prev => ({ ...prev, description: content }))
+      setIsEditingDescription(false)
+      return
+    }
+
+    if (action === 'subtasks') {
+      const items = result.subtasks || parseSubtasks(content)
+      setAiSubtasks(items)
+      return
+    }
+
+    if (action === 'estimate') {
+      const estimate = result.estimate ?? extractEstimate(content)
+      setEstimateText(content)
+      setEstimateSummary(estimate?.label || '')
+      setEstimateDays(estimate?.days ?? null)
+      setIsEstimateOpen(true)
+      return
+    }
+
+    if (action === 'priority') {
+      const priority = result.priority ?? parsePriority(content)
+      setEditForm(prev => ({ ...prev, priority }))
+    }
+  }
+
   const handleDelete = async () => {
     if (taskId <= 0 || groupId <= 0) {
       console.error('Invalid task id/group id for delete task API')
@@ -346,6 +432,11 @@ export default function CardDetailSheet({
                   <Label className='text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 block'>
                     Mô tả
                   </Label>
+                  <AIAssistant
+                    taskTitle={editForm.title || taskDetail.title || ''}
+                    taskDescription={editForm.description}
+                    onResult={handleAIResult}
+                  />
                   {isEditingDescription ? (
                     <Textarea
                       value={editForm.description}
@@ -366,7 +457,11 @@ export default function CardDetailSheet({
                       onClick={() => setIsEditingDescription(true)}
                       className='min-h-20 rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5 cursor-pointer hover:bg-slate-100 transition-colors text-sm whitespace-pre-wrap'
                     >
-                      {editForm.description || (
+                      {editForm.description ? (
+                        <ReactMarkdown className='text-sm text-slate-700 space-y-2 [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-5 [&_ol]:pl-5 [&_strong]:font-semibold [&_em]:italic'>
+                          {editForm.description}
+                        </ReactMarkdown>
+                      ) : (
                         <span className='text-slate-400'>
                           Thêm mô tả chi tiết...
                         </span>
@@ -374,6 +469,14 @@ export default function CardDetailSheet({
                     </div>
                   )}
                 </div>
+
+                {aiSubtasks.length > 0 && (
+                  <SubtaskPreview
+                    lines={aiSubtasks}
+                    onApply={handleApplySubtasks}
+                    onClose={() => setAiSubtasks([])}
+                  />
+                )}
 
                 {/* Activity meta — compact */}
                 <div className='flex items-center gap-4 text-xs text-slate-400 py-2 border-t border-slate-100'>
@@ -607,6 +710,46 @@ export default function CardDetailSheet({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={isEstimateOpen} onOpenChange={setIsEstimateOpen}>
+        <DialogContent className='max-w-2xl'>
+          <DialogHeader>
+            <DialogTitle>Kết quả ước tính từ AI</DialogTitle>
+            <DialogDescription>
+              {estimateSummary
+                ? `Tóm tắt: ${estimateSummary}`
+                : 'Không trích xuất được thời gian cụ thể.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className='max-h-64 overflow-y-auto whitespace-pre-wrap text-sm text-slate-700'>
+            {estimateText}
+          </div>
+          <DialogFooter>
+            <Button
+              type='button'
+              variant='outline'
+              onClick={() => setIsEstimateOpen(false)}
+            >
+              Đóng
+            </Button>
+            <Button
+              type='button'
+              className='bg-purple-600 hover:bg-purple-700'
+              onClick={() => {
+                if (!estimateDays) return
+                setEditForm(prev => ({
+                  ...prev,
+                  dueDate: addDaysToDate(estimateDays)
+                }))
+                setIsEstimateOpen(false)
+              }}
+              disabled={!estimateDays}
+            >
+              Áp dụng kết quả tóm tắt
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

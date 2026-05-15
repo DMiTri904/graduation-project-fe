@@ -270,31 +270,23 @@ export default function TaskCommentSection({
   }
 
   function isCommentAuthorActive(comment: TaskCommentDto) {
+    if ((comment as any)?.isTeacher === true) return true
+
     const candidates = [
       (comment as any)?.isActive,
       (comment as any)?.userIsActive,
-      (comment as any)?.isUserActive,
-      (comment as any)?.authorIsActive,
-      (comment as any)?.user?.isActive,
-      (comment as any)?.author?.isActive,
-      (comment as any)?.member?.isActive
+      (comment as any)?.user?.isActive
     ]
-
     const resolved = candidates.find(value => typeof value === 'boolean')
-    if (typeof resolved === 'boolean') {
-      return resolved
-    }
+    if (typeof resolved === 'boolean') return resolved
 
     const rawAuthorId = Number(
       (comment as any)?.userId ?? (comment as any)?.user?.id
     )
-    if (!Number.isFinite(rawAuthorId) || rawAuthorId <= 0) {
-      return true
-    }
 
-    if (activeMemberIds.size === 0) {
-      return true
-    }
+    if (!Number.isFinite(rawAuthorId) || rawAuthorId <= 0) return true
+
+    if (activeMemberIds.size === 0) return true
 
     return activeMemberIds.has(rawAuthorId)
   }

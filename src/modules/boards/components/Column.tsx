@@ -78,9 +78,8 @@ function Column({ column }: ColumnProps) {
         >
           <h3 className='text-sm font-bold truncate'>{column.title}</h3>
 
-          <DropdownMenu>
+          {/* <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              {/* onPointerDown stopPropagation để khi click mở Menu không bị dnd-kit nhầm là đang kéo cột */}
               <Button
                 variant='ghost'
                 size='sm'
@@ -95,14 +94,13 @@ function Column({ column }: ColumnProps) {
                 <Plus className='mr-2 h-4 w-4' />
                 Add new card
               </DropdownMenuItem>
-              {/* ... Các menu item khác giữ nguyên ... */}
               <DropdownMenuSeparator />
               <DropdownMenuItem className='text-red-600'>
                 <Trash2 className='mr-2 h-4 w-4' />
                 Remove this column
               </DropdownMenuItem>
             </DropdownMenuContent>
-          </DropdownMenu>
+          </DropdownMenu> */}
         </div>
 
         {/* VÙNG CHỨA LIST CARD CẦN PHẢI CUỘN - MAGIC LÀ Ở ĐÂY */}

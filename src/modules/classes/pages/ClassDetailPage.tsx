@@ -23,7 +23,6 @@ import {
 } from '../hooks/useClassroomGroups'
 import type { ClassroomEnrollmentItem } from '../api/classroomGroupApi'
 import ClassroomTeacherActions from '../components/ClassroomTeacherActions'
-import DeleteGroupButton from '@/modules/groups/components/DeleteGroupButton'
 import { useExportAllGroups } from '@/modules/reports/hooks/useExportAllGroups'
 import { toast } from 'sonner'
 
@@ -316,10 +315,11 @@ export default function ClassDetailPage() {
                     {classData.subjectName}
                   </Badge>
                 </div>
-                <CardDescription className='text-base'>
-                  {studentCount} sinh viên • {classData.totalGroups ?? 0} nhóm
+                {/* <CardDescription className='text-base'>
+                  {studentCount} sinh viên • 
+                  {classData.totalGroups ?? 0} nhóm
                   đã tạo
-                </CardDescription>
+                </CardDescription> */}
 
                 {!isStudent && (
                   <div className='mt-4'>
@@ -381,7 +381,7 @@ export default function ClassDetailPage() {
                 </div>
               </div>
 
-              <div className='flex items-center gap-3 p-3 bg-slate-50 rounded-lg'>
+              {/* <div className='flex items-center gap-3 p-3 bg-slate-50 rounded-lg'>
                 <div className='p-2 bg-green-100 rounded-lg'>
                   <Users className='h-5 w-5 text-green-600' />
                 </div>
@@ -391,19 +391,19 @@ export default function ClassDetailPage() {
                     {classData.totalGroups ?? 0}
                   </p>
                 </div>
-              </div>
+              </div> */}
 
-              {/* <div className='flex items-center gap-3 p-3 bg-slate-50 rounded-lg'>
+              <div className='flex items-center gap-3 p-3 bg-slate-50 rounded-lg'>
                 <div className='p-2 bg-amber-100 rounded-lg'>
                   <UserCircle className='h-5 w-5 text-amber-600' />
                 </div>
                 <div>
                   <p className='text-sm text-slate-600'>Chưa có nhóm</p>
                   <p className='text-xl font-bold text-slate-900'>
-                    {ungroupedStudentCount}
+                    {classData.membersWithoutGroup ?? 0}
                   </p>
                 </div>
-              </div> */}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -482,16 +482,8 @@ export default function ClassDetailPage() {
                     onClick={() =>
                       group.rawGroupId && handleViewGroup(group.rawGroupId)
                     }
-                    actionButton={
-                      group.rawGroupId ? (
-                        <div onClick={e => e.stopPropagation()}>
-                          <DeleteGroupButton
-                            classroomId={String(classroomIdForActions)}
-                            groupId={group.rawGroupId}
-                          />
-                        </div>
-                      ) : null
-                    }
+                    showReportButton={!isStudent}
+                    showDeleteButton={!isStudent}
                   />
                 ))}
               </div>

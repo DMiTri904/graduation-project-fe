@@ -78,7 +78,7 @@ export default function CreateGroupModal({
             </Label>
             <Input
               id='name'
-              placeholder='Ví dụ: Nhóm 1 - Đồ án Cuối kỳ'
+              placeholder='Ví dụ: Nhóm 1'
               {...register('name')}
               className={errors.name ? 'border-red-500' : ''}
               disabled={submitting}

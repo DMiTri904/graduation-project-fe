@@ -1,9 +1,23 @@
-import { Users } from 'lucide-react'
+import { Users, FileText, Loader2, Trash2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import React from 'react'
+import { useExportReport } from '@/modules/reports/hooks/useExportReport'
+import { toast } from 'sonner'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger
+} from '@/components/ui/alert-dialog'
+import { useDeleteGroup } from '@/modules/groups/hooks/useGroups'
 
 interface GroupCardProps {
   group: any
@@ -13,6 +27,8 @@ interface GroupCardProps {
   isMyGroup?: boolean
   onJoin?: () => void
   isJoinDisabled?: boolean
+  showReportButton?: boolean
+  showDeleteButton?: boolean
 }
 
 export default function GroupCard({
@@ -22,8 +38,13 @@ export default function GroupCard({
   maxMembersPerGroup,
   isMyGroup,
   onJoin,
-  isJoinDisabled
+  isJoinDisabled,
+  showReportButton = false,
+  showDeleteButton = false
 }: GroupCardProps) {
+  const { isLoading: isExportingReport, exportAndDownload } = useExportReport()
+  const deleteGroupMutation = useDeleteGroup()
+
   const computeProgressPercent = (
     progressData:
       | { totalTasks?: number; doneTasks?: number }
@@ -81,6 +102,51 @@ export default function GroupCard({
 
   const isClickable = Boolean(onClick) || resolvedIsMyGroup === true
 
+  const resolveNumericGroupId = (): number | null => {
+    const rawId = group?.rawGroupId ?? group?.id
+    const parsed = Number(String(rawId).replace(/\D/g, ''))
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null
+  }
+
+  const handleExportReport = async (
+    event: React.MouseEvent<HTMLButtonElement>
+  ) => {
+    event.preventDefault()
+    event.stopPropagation()
+
+    const numericGroupId = resolveNumericGroupId()
+    if (!numericGroupId) {
+      toast.error('ID nhóm không hợp lệ để xuất báo cáo')
+      return
+    }
+
+    try {
+      await exportAndDownload(numericGroupId)
+      toast.success('Xuất báo cáo thành công')
+    } catch {
+      toast.error('Xuất báo cáo thất bại, vui lòng thử lại')
+    }
+  }
+
+  const handleDeleteGroup = async () => {
+    const numericGroupId = resolveNumericGroupId()
+    if (!numericGroupId) {
+      toast.error('ID nhóm không hợp lệ để xóa')
+      return
+    }
+
+    try {
+      await deleteGroupMutation.mutateAsync(String(numericGroupId))
+      toast.success('Đã xóa nhóm thành công')
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.error?.message ||
+          error?.response?.data?.message ||
+          'Không thể xóa nhóm. Vui lòng thử lại.'
+      )
+    }
+  }
+
   return (
     <Card
       className={`group flex flex-col h-full border-2 transition-all ${
@@ -94,7 +160,48 @@ export default function GroupCard({
         <CardTitle className='text-lg group-hover:text-blue-600 transition-colors'>
           {group.name}
         </CardTitle>
-        {actionButton}
+        <div
+          className='flex items-center gap-2'
+          onClick={e => e.stopPropagation()}
+        >
+          {actionButton}
+          {showDeleteButton && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant='destructive'
+                  size='icon'
+                  className='h-8 w-8'
+                  disabled={deleteGroupMutation.isPending}
+                >
+                  {deleteGroupMutation.isPending ? (
+                    <Loader2 className='h-4 w-4 animate-spin' />
+                  ) : (
+                    <Trash2 className='h-4 w-4' />
+                  )}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Xác nhận xóa nhóm</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Bạn có chắc chắn muốn xóa nhóm này không? Hành động này
+                    không thể hoàn tác.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Hủy</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDeleteGroup}
+                    className='bg-red-600 hover:bg-red-700'
+                  >
+                    Xóa nhóm
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+        </div>
       </CardHeader>
 
       <CardContent className='flex-1 flex flex-col space-y-4'>
@@ -123,6 +230,29 @@ export default function GroupCard({
               indicatorClassName={getProgressColor(progress)}
             />
           </div>
+        )}
+
+        {showReportButton && (
+          <Button
+            type='button'
+            variant='outline'
+            size='sm'
+            className='w-full gap-2'
+            onClick={handleExportReport}
+            disabled={isExportingReport}
+          >
+            {isExportingReport ? (
+              <>
+                <Loader2 className='h-4 w-4 animate-spin' />
+                Đang xử lý...
+              </>
+            ) : (
+              <>
+                <FileText className='h-4 w-4' />
+                Tạo Báo Cáo
+              </>
+            )}
+          </Button>
         )}
 
         {resolvedIsMyGroup === false && Boolean(onJoin) && (

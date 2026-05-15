@@ -14,21 +14,22 @@ export const LoginBranding = () => {
           id='title-login-page'
           className='text-2xl lg:text-3xl xl:text-4xl 2xl:text-5xl font-bold mb-3 text-center tracking-wide leading-tight drop-shadow-lg whitespace-nowrap'
         >
-          Group Work Monitoring
+          {/* Group Work Monitoring */}
+          Hệ Thống Giám Sát
         </h1>
         <h2
           id='sub-title-login-page'
           className='text-2xl lg:text-3xl xl:text-4xl 2xl:text-5xl font-bold text-center mt-2 opacity-95 text-blue-200 whitespace-nowrap'
         >
-          and Evaluation System
+          {/* and Evaluation System */}
+          Và Đánh Giá Làm Việc Nhóm
         </h2>
 
         <p
           id='description-login-page'
           className='text-lg xl:text-xl opacity-90 text-center mt-8 leading-relaxed text-slate-200 max-w-lg mx-auto'
         >
-          An application supporting teaching and learning activities at Nha
-          Trang University
+          Ứng dụng hỗ trợ hoạt động dạy và học tại Trường Đại học Nha Trang
         </p>
       </div>
     </div>
