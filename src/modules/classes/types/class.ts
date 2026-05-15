@@ -46,6 +46,7 @@ export interface ClassResponse {
   totalEnrollments: number
   majorType?: string
   maxMembersPerGroup?: number
+  membersWithoutGroup?: number
   createdAt?: string
   updatedAt?: string
   totalStudents?: number

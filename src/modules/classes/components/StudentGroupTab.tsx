@@ -171,11 +171,6 @@ export default function StudentGroupTab({
         </div>
       )}
 
-      {/* Thống kê sĩ số lớp */}
-      <p className='text-xs text-slate-500 text-right mt-4'>
-        Thành viên trong lớp hiện tại: {enrollments.length}
-      </p>
-
       {/* Modal xử lý form tạo nhóm */}
       <CreateGroupModal
         isOpen={isCreateModalOpen}

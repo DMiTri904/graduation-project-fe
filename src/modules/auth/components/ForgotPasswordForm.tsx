@@ -87,10 +87,10 @@ export const ForgotPasswordForm = (props: ForgotPasswordFormProps) => {
               <img src={LogoImage} alt='Logo' className='w-30 h-30' />
             </div>
             <h1 className='text-2xl sm:text-3xl font-bold text-gray-800 mb-2 tracking-tight'>
-              Password Recovery
+              Khôi phục mật khẩu
             </h1>
             <p className='text-sm sm:text-base text-gray-600 leading-relaxed'>
-              Enter your email address to receive a password reset link
+              Nhập địa chỉ email của bạn để nhận liên kết đặt lại mật khẩu
             </p>
           </div>
 
@@ -102,14 +102,14 @@ export const ForgotPasswordForm = (props: ForgotPasswordFormProps) => {
             {/* Email Field */}
             <div className='space-y-2'>
               <Label htmlFor='email' className='text-gray-700'>
-                Email Address
+                Email
               </Label>
               <div className='relative'>
                 <Mail className='absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400' />
                 <Input
                   id='email'
                   type='email'
-                  placeholder='Enter your email address'
+                  placeholder='Nhập địa chỉ email của bạn'
                   className={`pl-10 h-11 ${
                     errors.email
                       ? 'border-red-500 focus-visible:ring-red-500'
@@ -144,10 +144,10 @@ export const ForgotPasswordForm = (props: ForgotPasswordFormProps) => {
                 {loading ? (
                   <div className='flex items-center justify-center gap-2'>
                     <div className='w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin'></div>
-                    <span>Sending...</span>
+                    <span>Đang gửi...</span>
                   </div>
                 ) : (
-                  'Submit Reset Request'
+                  'Gửi yêu cầu'
                 )}
               </Button>
             </div>
@@ -159,7 +159,7 @@ export const ForgotPasswordForm = (props: ForgotPasswordFormProps) => {
               to='/login'
               className='text-sm text-blue-600 font-medium hover:text-blue-700 hover:underline transition-colors'
             >
-              Back to Login
+              Quay lại trang đăng nhập
             </Link>
           </div>
         </div>
