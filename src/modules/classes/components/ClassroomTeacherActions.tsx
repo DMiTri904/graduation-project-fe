@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Loader2, PencilLine, Power, ShieldCheck } from 'lucide-react'
+import { Loader2, PencilLine, Power, ShieldCheck, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   AlertDialog,
@@ -12,11 +12,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger
 } from '@/components/ui/alert-dialog'
+import { useNavigate } from 'react-router-dom'
 import EditClassroomModal from './EditClassroomModal'
 import {
   useActivateClassroom,
   useDeactivateClassroom
 } from '../hooks/useClassroomTeacherActions'
+import { useDeleteClassroom } from '../hooks/useClassroomGroups'
 import type { ClassroomTeacherActionsProps } from '../types/classroomTeacher'
 import ChangeInviteCodeButton from './ChangeInviteCodeButton'
 
@@ -25,12 +27,17 @@ export default function ClassroomTeacherActions({
   isActive,
   initialData
 }: ClassroomTeacherActionsProps) {
+  const navigate = useNavigate()
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
   const activateMutation = useActivateClassroom(classroomId)
   const deactivateMutation = useDeactivateClassroom(classroomId)
+  const deleteMutation = useDeleteClassroom()
 
-  const isMutating = activateMutation.isPending || deactivateMutation.isPending
+  const isMutating =
+    activateMutation.isPending ||
+    deactivateMutation.isPending ||
+    deleteMutation.isPending
 
   const handleActivate = async () => {
     await activateMutation.mutateAsync()
@@ -38,6 +45,11 @@ export default function ClassroomTeacherActions({
 
   const handleDeactivate = async () => {
     await deactivateMutation.mutateAsync()
+  }
+
+  const handleDelete = async () => {
+    await deleteMutation.mutateAsync(classroomId)
+    navigate('/classes')
   }
 
   return (
@@ -49,6 +61,41 @@ export default function ClassroomTeacherActions({
         </Button>
 
         <ChangeInviteCodeButton classroomId={classroomId} />
+
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant='destructive' disabled={isMutating}>
+              {deleteMutation.isPending ? (
+                <>
+                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                  Đang xử lý...
+                </>
+              ) : (
+                <>
+                  <Trash2 className='mr-2 h-4 w-4' />
+                  Xóa lớp
+                </>
+              )}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Xác nhận xóa lớp học</AlertDialogTitle>
+              <AlertDialogDescription>
+                Bạn có chắc chắn muốn xóa lớp học này?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Hủy</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDelete}
+                className='bg-red-600 hover:bg-red-700'
+              >
+                Xóa lớp
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {isActive ? (
           <AlertDialog>

@@ -260,7 +260,7 @@ export default function AddMemberModal({
 
         <div className='space-y-4 py-2'>
           <div className='space-y-2'>
-            <Label htmlFor='member-search'>Thành viên đã chọn</Label>
+            <Label htmlFor='member-search'>Thành viên </Label>
 
             <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
               <PopoverTrigger asChild>
@@ -298,7 +298,7 @@ export default function AddMemberModal({
                       className='flex-1 bg-transparent outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed'
                       placeholder={
                         selectedUsers.length === 0
-                          ? 'Nhập tên hoặc email...'
+                          ? 'Nhập tên, mssv hoặc email...'
                           : 'Thêm người khác...'
                       }
                       value={searchValue}
@@ -423,7 +423,7 @@ export default function AddMemberModal({
           </div>
 
           <div className='space-y-2'>
-            <Label htmlFor='member-role'>Vai trò chung</Label>
+            <Label htmlFor='member-role'>Vai trò </Label>
             <Select
               value={selectedRole}
               onValueChange={value => setSelectedRole(value as MemberRole)}
@@ -433,15 +433,16 @@ export default function AddMemberModal({
                 <SelectValue placeholder='Chọn vai trò' />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value='Member'>Member</SelectItem>
+                <SelectItem value='Member'>Thành viên</SelectItem>
                 <SelectItem value='Leader' disabled={selectedUsers.length > 1}>
-                  Leader
+                  Trưởng nhóm
                 </SelectItem>
               </SelectContent>
             </Select>
             {selectedUsers.length > 1 && (
               <p className='text-[13px] text-muted-foreground'>
-                Chỉ có thể chọn 1 người làm Leader. Đã chuyển quyền về Member.
+                Chỉ có thể chọn 1 người làm Trưởng nhóm. Đã chuyển quyền về
+                Thành viên.
               </p>
             )}
           </div>

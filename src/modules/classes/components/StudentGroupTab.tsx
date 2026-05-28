@@ -49,9 +49,11 @@ export default function StudentGroupTab({
       setIsCreateModalOpen(false)
     } catch (error: unknown) {
       const message =
-        error instanceof Error
+        (error as any)?.response?.data?.message ||
+        (error as any)?.response?.data?.error?.message ||
+        (error instanceof Error
           ? error.message
-          : 'Không thể tạo nhóm, vui lòng thử lại.'
+          : 'Không thể tạo nhóm, vui lòng thử lại.')
       toast.error(message)
     }
   }

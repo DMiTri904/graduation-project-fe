@@ -75,9 +75,11 @@ export const useCreateGroupForm = ({
       onSuccess?.()
     } catch (error: unknown) {
       const message =
-        error instanceof Error
+        (error as any)?.response?.data?.message ||
+        (error as any)?.response?.data?.error?.message ||
+        (error instanceof Error
           ? error.message
-          : 'Có lỗi xảy ra khi tạo nhóm. Vui lòng thử lại.'
+          : 'Có lỗi xảy ra khi tạo nhóm. Vui lòng thử lại.')
       toast.error(message)
     }
   })

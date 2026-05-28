@@ -58,6 +58,7 @@ export default function GroupSettingsTab({
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isDeactivateModalOpen, setIsDeactivateModalOpen] = useState(false)
   const [confirmName, setConfirmName] = useState('')
+  const [localIsActive, setLocalIsActive] = useState<boolean | null>(null)
 
   const {
     mutateAsync: updateGroupInfoMutateAsync,
@@ -83,6 +84,7 @@ export default function GroupSettingsTab({
     setGroupName(groupDetail.name || '')
     setSubjectOrProjectName(groupDetail.subjectOrProjectName || '')
     setRepoUrl(resolvedRepoUrl)
+    setLocalIsActive(groupDetail.isActive !== false)
   }, [groupDetail])
 
   const handleSaveGroupInfo = async () => {
@@ -185,7 +187,7 @@ export default function GroupSettingsTab({
   const handleToggleActiveStatus = async () => {
     if (!canManageActiveStatus || groupId <= 0) return
 
-    const isActive = groupDetail?.isActive !== false
+    const isActive = localIsActive ?? groupDetail?.isActive !== false
 
     if (isActive) {
       setIsDeactivateModalOpen(true)
@@ -195,6 +197,7 @@ export default function GroupSettingsTab({
     try {
       setIsUpdatingActiveStatus(true)
       await reactiveGroupMutateAsync()
+      setLocalIsActive(true)
       toast.success('Đã kích hoạt lại nhóm thành công!')
       await reloadGroupData?.()
     } catch (error: any) {
@@ -214,6 +217,7 @@ export default function GroupSettingsTab({
     try {
       setIsUpdatingActiveStatus(true)
       await deactivateGroupMutateAsync()
+      setLocalIsActive(false)
       toast.success('Đã vô hiệu hóa nhóm thành công!')
       setIsDeactivateModalOpen(false)
       await reloadGroupData?.()
@@ -394,7 +398,7 @@ export default function GroupSettingsTab({
                   Trạng thái hoạt động nhóm
                 </div>
                 <div className='text-sm text-slate-600'>
-                  {groupDetail?.isActive !== false
+                  {(localIsActive ?? groupDetail?.isActive) !== false
                     ? 'Nhóm hiện đang hoạt động bình thường.'
                     : 'Nhóm hiện đang bị vô hiệu hóa.'}
                 </div>
@@ -403,7 +407,7 @@ export default function GroupSettingsTab({
                 type='button'
                 size='sm'
                 className={`shrink-0 ${
-                  groupDetail?.isActive !== false
+                  (localIsActive ?? groupDetail?.isActive) !== false
                     ? 'bg-amber-500 text-white hover:bg-amber-600'
                     : 'bg-green-600 text-white hover:bg-green-700'
                 }`}
@@ -412,7 +416,7 @@ export default function GroupSettingsTab({
               >
                 {isUpdatingActiveStatus
                   ? 'Đang xử lý...'
-                  : groupDetail?.isActive !== false
+                  : (localIsActive ?? groupDetail?.isActive) !== false
                     ? 'Khóa nhóm'
                     : 'Kích hoạt lại'}
               </Button>

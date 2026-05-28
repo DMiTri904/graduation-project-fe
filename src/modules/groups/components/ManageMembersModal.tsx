@@ -299,8 +299,10 @@ export default function ManageMembersModal({
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value='Leader'>Leader</SelectItem>
-                              <SelectItem value='Member'>Member</SelectItem>
+                              <SelectItem value='Leader'>
+                                Trưởng nhóm
+                              </SelectItem>
+                              <SelectItem value='Member'>Thành viên</SelectItem>
                             </SelectContent>
                           </Select>
                         ) : (

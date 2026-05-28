@@ -290,17 +290,8 @@ export default function MyClassesPage() {
           <p className='text-slate-600 mb-6 max-w-sm'>
             {isStudent
               ? 'Bạn chưa tham gia lớp nào. Hãy dùng mã lớp để tham gia.'
-              : 'Tạo lớp học đầu tiên để bắt đầu quản lý sinh viên và nhóm dự án'}
+              : 'Tạo lớp học đầu tiên để bắt đầu quản lý sinh viên và nhóm học tập.'}
           </p>
-          {!isStudent && (
-            <Button
-              onClick={() => setIsCreateModalOpen(true)}
-              className='gap-2'
-            >
-              <Plus className='h-4 w-4' />
-              Tạo Lớp Học
-            </Button>
-          )}
         </div>
       )}
 
