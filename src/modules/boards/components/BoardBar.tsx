@@ -42,6 +42,8 @@ interface BoardBarProps {
   board?: Board
   groupId?: number
   groupDetail?: any
+  isGroupMissing?: boolean
+  missingMessage?: string
   isMyTasksOnly: boolean
   onMyTasksOnlyChange: (value: boolean) => void
   onClearFilters: () => void
@@ -51,6 +53,8 @@ export default function BoardBar({
   board,
   groupId,
   groupDetail,
+  isGroupMissing,
+  missingMessage,
   isMyTasksOnly,
   onMyTasksOnlyChange,
   onClearFilters
@@ -152,14 +156,18 @@ export default function BoardBar({
     })
   }
 
+  const displayTitle = isGroupMissing
+    ? missingMessage || 'Không tìm thấy nhóm'
+    : groupDetail?.name || board?.title || 'Loading...'
+
   return (
     <div className='w-full shrink-0 border-b border-slate-200 bg-white px-3 py-3 md:px-6 md:py-3'>
       <div className='flex flex-col gap-3 md:flex-row md:items-center md:justify-between'>
         <div className='flex min-w-0 flex-wrap items-center gap-3 md:gap-5'>
           <h1 className='min-w-0 truncate text-lg font-bold tracking-tight text-slate-900 md:text-xl'>
-            {groupDetail?.name || board?.title || 'Loading...'}
+            {displayTitle}
           </h1>
-          {groupDetail?.subjectOrProjectName && (
+          {!isGroupMissing && groupDetail?.subjectOrProjectName && (
             <div className='flex items-center gap-1.5 text-sm font-medium text-slate-500 mt-0.5'>
               <span className='truncate'>
                 {groupDetail.subjectOrProjectName}

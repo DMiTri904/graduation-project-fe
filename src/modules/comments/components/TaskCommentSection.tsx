@@ -98,7 +98,7 @@ function CommentComposer({
               onChange={e => setFile(e.target.files?.[0] || null)}
               disabled={isSubmitting}
             />
-            <Button
+            {/* <Button
               type='button'
               variant='ghost'
               size='sm'
@@ -108,7 +108,7 @@ function CommentComposer({
             >
               <ImageIcon className='h-3.5 w-3.5 mr-1' />
               Ảnh
-            </Button>
+            </Button> */}
             {file && (
               <div className='flex items-center gap-1'>
                 <span className='text-xs text-slate-400 truncate max-w-28'>

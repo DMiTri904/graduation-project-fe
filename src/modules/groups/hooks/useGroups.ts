@@ -85,8 +85,13 @@ export const useCreateGroup = () => {
       queryClient.invalidateQueries({ queryKey: ['groups'] })
     },
     onError: (error: any) => {
+      const message =
+        error?.response?.data?.message ||
+        error?.response?.data?.error?.message ||
+        error?.message ||
+        'Có lỗi khi tạo nhóm.'
       toast.error('Thất bại', {
-        description: error?.response?.data?.message || 'Có lỗi khi tạo nhóm.'
+        description: message
       })
     }
   })

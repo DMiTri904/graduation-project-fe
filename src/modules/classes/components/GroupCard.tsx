@@ -29,6 +29,7 @@ interface GroupCardProps {
   isJoinDisabled?: boolean
   showReportButton?: boolean
   showDeleteButton?: boolean
+  onDeleted?: () => void
 }
 
 export default function GroupCard({
@@ -40,7 +41,8 @@ export default function GroupCard({
   onJoin,
   isJoinDisabled,
   showReportButton = false,
-  showDeleteButton = false
+  showDeleteButton = false,
+  onDeleted
 }: GroupCardProps) {
   const { isLoading: isExportingReport, exportAndDownload } = useExportReport()
   const deleteGroupMutation = useDeleteGroup()
@@ -138,6 +140,7 @@ export default function GroupCard({
     try {
       await deleteGroupMutation.mutateAsync(String(numericGroupId))
       toast.success('Đã xóa nhóm thành công')
+      onDeleted?.()
     } catch (error: any) {
       toast.error(
         error?.response?.data?.error?.message ||

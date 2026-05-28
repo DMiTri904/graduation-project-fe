@@ -1,12 +1,11 @@
-// Board Details
+import { useState, useMemo } from 'react'
+import { useParams } from 'react-router-dom'
 import BoardBar from '../components/BoardBar'
 import BoardContent from '../components/BoardContent'
 import GroupSettingsTab from '../components/GroupSettingsTab'
 import ContributionTable from '@/modules/groups/components/ContributionTable'
 import OverdueTaskList from '@/modules/tasks/components/OverdueTaskList'
-import { useParams } from 'react-router-dom'
 import { useGetGroupDetail } from '@/modules/groups/hooks/useGroups'
-import { useState } from 'react'
 import {
   useBoardDataMapper,
   useBoardRole,
@@ -25,11 +24,39 @@ function Board() {
   const currentGroupMembers = useBoardStore(state => state.currentGroupMembers)
   const tokenUser = getCurrentUserFromToken()
 
-  const { data: groupResponse, refetch: refetchGroupDetail } =
-    useGetGroupDetail(groupId)
+  const {
+    data: groupResponse,
+    refetch: refetchGroupDetail,
+    isLoading: isGroupLoading,
+    isError: isGroupError,
+    error: groupError
+  } = useGetGroupDetail(groupId)
   const { data: tasks = [] } = useGetBoardTasks(groupId, isMyTasksOnly)
 
   const groupDetail = groupResponse?.value
+  const isGroupMissing =
+    !isGroupLoading && (!groupDetail || isGroupError || groupId <= 0)
+
+  // Xử lý bóc tách message lỗi chi tiết từ Backend (Axios Error Payload)
+  const missingMessage = useMemo(() => {
+    if (!isGroupError) {
+      return 'Không tìm thấy nhóm hoặc nhóm đã bị xóa.'
+    }
+
+    if (groupError) {
+      const err = groupError as any
+      // Quét qua các trường phổ biến mà Backend thường trả về lỗi
+      return (
+        err.response?.data?.message || // Chuẩn custom message phổ biến
+        err.response?.data?.title || // Chuẩn RFC 7807 (Problem Details)
+        err.response?.data?.detail || // Chi tiết lỗi RFC 7807
+        err.message || // Lỗi HTTP mặc định (ví dụ: Request failed...)
+        'Không thể tải thông tin nhóm.'
+      )
+    }
+
+    return 'Không thể tải thông tin nhóm.'
+  }, [isGroupError, groupError])
 
   const currentUserRole = useBoardRole({
     tokenUser,
@@ -51,12 +78,15 @@ function Board() {
           board={boardFromApi}
           groupId={Number.isFinite(groupId) ? groupId : 0}
           groupDetail={groupDetail}
+          isGroupMissing={isGroupMissing}
+          missingMessage={missingMessage}
           isMyTasksOnly={isMyTasksOnly}
           onMyTasksOnlyChange={setIsMyTasksOnly}
           onClearFilters={() => setIsMyTasksOnly(false)}
         />
       </div>
 
+      {/* Tabs Navigation */}
       <div className='shrink-0 border-b border-slate-200 bg-white px-3 md:px-6'>
         <div className='flex h-11 items-center gap-4 overflow-x-auto px-0.5 md:h-12 md:gap-6 md:px-0'>
           <button
@@ -95,6 +125,16 @@ function Board() {
         </div>
       </div>
 
+      {/* Error Alert Box */}
+      {isGroupMissing && (
+        <div className='shrink-0 px-3 md:px-6 pt-3'>
+          <div className='rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700'>
+            {missingMessage}
+          </div>
+        </div>
+      )}
+
+      {/* Dynamic Tabs Content */}
       {activeTab === 'kanban' ? (
         <BoardContent board={boardFromApi} currentUserRole={currentUserRole} />
       ) : activeTab === 'settings' ? (

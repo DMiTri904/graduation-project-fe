@@ -30,7 +30,7 @@ export const MAJOR_TYPE_OPTIONS: MajorTypeOption[] = [
   },
   {
     value: 'General',
-    label: 'Ngành chung / Ngành khác'
+    label: 'Ngành khác'
   }
 ]
 

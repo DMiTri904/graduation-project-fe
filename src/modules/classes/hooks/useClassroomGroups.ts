@@ -13,6 +13,10 @@ import {
   getClassroomGroupsApi,
   requestJoinGroupApi
 } from '../api/classroomGroupApi'
+import {
+  deleteClassroomApi,
+  removeStudentFromClassroomApi
+} from '../api/classroomApi'
 
 // Import Types
 import type { CreateGroupRequest } from '@/modules/groups/types/group.request'
@@ -24,6 +28,7 @@ import type {
 
 // Import key list từ useClass (nếu project của bạn đang dùng)
 import { classKeys } from './useClass'
+import { toast } from 'sonner'
 
 // ==========================================
 // 1. QUERY KEYS
@@ -82,6 +87,48 @@ export const useCreateClassroomGroup = (classroomId?: number | string) => {
 export const useRequestJoinGroup = () => {
   return useMutation<void, Error, number | string>({
     mutationFn: groupId => requestJoinGroupApi(groupId)
+  })
+}
+
+export const useDeleteClassroom = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (classroomId: number | string) =>
+      deleteClassroomApi(classroomId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: classKeys.lists() })
+      toast.success('Xóa lớp học thành công')
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Không thể xóa lớp học')
+    }
+  })
+}
+
+export const useRemoveStudentFromClassroom = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      classroomId,
+      studentId
+    }: {
+      classroomId: number | string
+      studentId: number
+    }) => removeStudentFromClassroomApi(classroomId, studentId),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: classroomGroupKeys.enrollments(variables.classroomId)
+      })
+      queryClient.invalidateQueries({
+        queryKey: classKeys.detail(String(variables.classroomId))
+      })
+      toast.success('Đã xóa sinh viên khỏi lớp')
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Không thể xóa sinh viên')
+    }
   })
 }
 

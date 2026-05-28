@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Copy, CheckCircle2, Users, UserCircle } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -21,6 +22,7 @@ import {
   useClassroomEnrollments,
   useClassroomGroups
 } from '../hooks/useClassroomGroups'
+import { classroomGroupKeys } from '../hooks/useClassroomGroups'
 import type { ClassroomEnrollmentItem } from '../api/classroomGroupApi'
 import ClassroomTeacherActions from '../components/ClassroomTeacherActions'
 import { useExportAllGroups } from '@/modules/reports/hooks/useExportAllGroups'
@@ -33,6 +35,7 @@ export default function ClassDetailPage() {
   const normalizedRole = (currentUser.systemRole || '').toUpperCase()
   const isStudent = normalizedRole.includes('STUDENT')
   const [copiedCode, setCopiedCode] = useState(false)
+  const queryClient = useQueryClient()
 
   // Gọi API lấy chi tiết 1 lớp học
   const {
@@ -289,14 +292,20 @@ export default function ClassDetailPage() {
 
   const classroomIdForActions = id || String(classData.id)
 
+  const handleGroupDeleted = () => {
+    queryClient.invalidateQueries({
+      queryKey: classroomGroupKeys.groups(classroomIdForActions)
+    })
+  }
+
   return (
-    <div className='h-full overflow-y-auto p-6 pt-0'>
+    <div className='h-full overflow-y-auto p-4 pt-0'>
       {/* Header */}
-      <div className='mb-6'>
+      <div className='mb-3'>
         <Button
           variant='ghost'
           onClick={() => navigate('/classes')}
-          className='mb-4'
+          className='mb-2 h-8 px-2'
         >
           <ArrowLeft className='mr-2 h-4 w-4' />
           Quay lại danh sách lớp
@@ -304,7 +313,7 @@ export default function ClassDetailPage() {
 
         {/* Class Info Card */}
         <Card className='border-2'>
-          <CardHeader>
+          <CardHeader className='pb-3 pt-4'>
             <div className='flex items-start justify-between gap-4'>
               <div className='flex-1'>
                 <div className='flex items-center gap-3 mb-2'>
@@ -484,6 +493,7 @@ export default function ClassDetailPage() {
                     }
                     showReportButton={!isStudent}
                     showDeleteButton={!isStudent}
+                    onDeleted={handleGroupDeleted}
                   />
                 ))}
               </div>
@@ -520,7 +530,10 @@ export default function ClassDetailPage() {
                 </CardContent>
               </Card>
             ) : (
-              <UngroupedStudentsTable students={classStudents} />
+              <UngroupedStudentsTable
+                students={classStudents}
+                classroomId={classData.id}
+              />
             )}
           </TabsContent>
         </Tabs>

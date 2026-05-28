@@ -38,6 +38,9 @@ export const useActivateClassroom = (classroomId: ClassroomId) => {
   return useMutation<ClassroomTeacherResponse, Error, void>({
     mutationFn: () => activateClassroomApi(classroomId),
     onSuccess: () => {
+      queryClient.setQueryData(classKeys.detail(classroomId), (prev: any) =>
+        prev ? { ...prev, isActive: true } : prev
+      )
       invalidateClassroomData(queryClient, classroomId)
       toast.success('Đã kích hoạt lại lớp học')
     }
@@ -50,6 +53,9 @@ export const useDeactivateClassroom = (classroomId: ClassroomId) => {
   return useMutation<ClassroomTeacherResponse, Error, void>({
     mutationFn: () => deactivateClassroomApi(classroomId),
     onSuccess: () => {
+      queryClient.setQueryData(classKeys.detail(classroomId), (prev: any) =>
+        prev ? { ...prev, isActive: false } : prev
+      )
       invalidateClassroomData(queryClient, classroomId)
       toast.success('Đã vô hiệu hóa lớp học')
     }
